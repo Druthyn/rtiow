@@ -13,8 +13,8 @@ impl Vec3 {
         Vec3 { x: (0.0), y: (0.0), z: (0.0) }
     }
 
-    pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
-        Vec3 {x, y, z}
+    pub fn new<T1: Into<f64>, T2: Into<f64>, T3: Into<f64>>(x: T1, y: T2, z: T3) -> Vec3 {
+        Vec3 {x: x.into(), y: y.into(), z: z.into()}
     }
 
     pub fn x(&self) -> f64 {
