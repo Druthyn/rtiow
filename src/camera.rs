@@ -17,9 +17,9 @@ impl Camera {
         const FOCAL_LENGTH: f64 = 1.0;
 
         let origin: Point3 = Vec3::zero();
-        let horizontal: Vec3 = Vec3::new(VIEWPORT_WIDTH, 0.0, 0.0);
-        let vertical: Vec3 = Vec3::new(0.0, VIEWPORT_HEIGHT, 0.0);
-        let lower_left_corner: Point3 = origin - horizontal/2.0 - (vertical/2.0) - Vec3::new(0.0, 0.0, FOCAL_LENGTH);  
+        let horizontal: Vec3 = Vec3::new(VIEWPORT_WIDTH, 0, 0);
+        let vertical: Vec3 = Vec3::new(0, VIEWPORT_HEIGHT, 0);
+        let lower_left_corner: Point3 = origin - horizontal/2.0 - (vertical/2.0) - Vec3::new(0, 0, FOCAL_LENGTH);  
 
         Camera {
             origin,
