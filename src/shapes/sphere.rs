@@ -37,10 +37,10 @@ impl Hittable for Sphere {
 }
 
 impl Sphere {
-    pub fn new(cen: Point3, r: f64) -> Sphere{
+    pub fn new<T: Into<f64>>(cen: Point3, r: T) -> Sphere{
         Sphere { 
             center: cen, 
-            radius: r
+            radius: r.into()
         }
     }
 }
