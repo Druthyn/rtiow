@@ -4,7 +4,7 @@ pub mod shapes;
 pub mod camera;
 
 use std::thread;
-use futures::future::join_all;
+use rayon::prelude::*;
 
 
 use crate::vec3::{Point3, Vec3, Color};
@@ -28,15 +28,7 @@ enum DebugSaving {
     Quit
 }
 
-const SAVE_IMAGE: DebugSaving = DebugSaving::Quit;
-
-async fn fire_ray() -> Color {
-    let u = (i as f64 + rng.gen::<f64>()) / ((IMAGE_WIDTH-1)  as f64);
-    let v = (j as f64 + rng.gen::<f64>()) / ((IMAGE_HEIGHT-1) as f64);
-               
-    let r = cam.get_ray(u, v);
-    ray_color(&r, &world)
-}
+const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
 fn ray_color<T: Hittable>(r: &Ray, world: &T) -> Color { 
 
@@ -51,8 +43,6 @@ fn ray_color<T: Hittable>(r: &Ray, world: &T) -> Color {
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0)
 }
 
-
-
 fn main() {
 
     let mut world = HittableList::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
@@ -61,39 +51,39 @@ fn main() {
 
     let cam: Camera = Camera::new();
 
-    let mut rng = thread_rng();
+    
 
 //    Rendering
 
-    let mut image_buffer = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
-
-    for j in (0..IMAGE_HEIGHT).rev() {
-        print!("\rScanlines remaining: {j}");
-        for i in 0..IMAGE_WIDTH {
-            
-            let mut pixel_color: Color = Color::zero();
+    
 
 
-            let mut threads = Vec::default();
-            for _ in 0..SAMPLES_PER_PIXEL {
-                threads.push(thread::spawn(||->  {
-                    async {
-                        Color::new(0.0, 0.0, 0.0)
+    let pixels = (0..IMAGE_HEIGHT)
+                .into_par_iter()
+                .rev()
+                .flat_map_iter(|j| (0..IMAGE_WIDTH).map(move |i| (i, j)))
+                .flat_map_iter(|(i, j)| {
+                    let mut pixel_color: Color = Color::zero();
+                    let mut rng = thread_rng();
+
+                    for _ in 0..SAMPLES_PER_PIXEL {
+                        let u = (i as f64 + rng.gen::<f64>()) / ((IMAGE_WIDTH-1)  as f64);
+                        let v = (j as f64 + rng.gen::<f64>()) / ((IMAGE_HEIGHT-1) as f64);
+
+                        let r = cam.get_ray(u, v);
+                        pixel_color = pixel_color + ray_color(&r, &world);
                     }
-                }));
-            }
-        
-            join_all(threads);
-            let pixel = Rgba::from(pixel_color.to_rgba(255, SAMPLES_PER_PIXEL));
-            image_buffer.put_pixel(i, IMAGE_HEIGHT-1-j, pixel);
-        }
-    }
+                    let pixel = pixel_color.to_rgba(255, SAMPLES_PER_PIXEL);
+                    pixel
+                }).collect();
+           
+    let image_buffer = ImageBuffer::from_vec(IMAGE_WIDTH, IMAGE_HEIGHT, pixels).unwrap();
+    
     println!("\nDone.");
 
     // Drawing preview window
     
-    let mut window: piston_window::PistonWindow =
-    piston_window::WindowSettings::new("Scene", [IMAGE_WIDTH, IMAGE_HEIGHT])
+    let mut window: piston_window::PistonWindow = piston_window::WindowSettings::new("Scene", [IMAGE_WIDTH, IMAGE_HEIGHT])
         .exit_on_esc(true)
         .build()
         .unwrap_or_else(|_e| { panic!("Could not create window!")});
