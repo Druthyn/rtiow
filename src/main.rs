@@ -3,7 +3,6 @@ pub mod vec3;
 pub mod shapes;
 pub mod camera;
 
-use std::thread;
 use rayon::prelude::*;
 
 
@@ -35,29 +34,23 @@ fn ray_color<T: Hittable>(r: &Ray, world: &T) -> Color {
     let res = world.hit(r, 0.0, f64::INFINITY);
 
     if let Some(shape) = res {
-        return 0.5 * (shape.get_normal() + Color::new(1.0, 1.0, 1.0));
+        return 0.5 * (shape.get_normal() + Color::new(1, 1, 1));
     }
 
     let unit_direction: Vec3 = r.direction().unit_vector();
     let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0)
+    (1.0 - t) * Color::new(1, 1, 1) + t*Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
 
-    let mut world = HittableList::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5));
-    world.add(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0));
+    let mut world = HittableList::new(Sphere::new(Point3::new(0, 0, -1), 0.5));
+    world.add(Sphere::new(Point3::new(0, -100.5, -1), 100));
 
 
     let cam: Camera = Camera::new();
 
-    
-
 //    Rendering
-
-    
-
-
     let pixels = (0..IMAGE_HEIGHT)
                 .into_par_iter()
                 .rev()
@@ -73,8 +66,7 @@ fn main() {
                         let r = cam.get_ray(u, v);
                         pixel_color = pixel_color + ray_color(&r, &world);
                     }
-                    let pixel = pixel_color.to_rgba(255, SAMPLES_PER_PIXEL);
-                    pixel
+                    pixel_color.to_rgba(255, SAMPLES_PER_PIXEL)
                 }).collect();
            
     let image_buffer = ImageBuffer::from_vec(IMAGE_WIDTH, IMAGE_HEIGHT, pixels).unwrap();
