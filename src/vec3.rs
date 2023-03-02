@@ -1,4 +1,5 @@
 use std::{ops::{Add, Sub, Mul, Div}, fmt::Display};
+use rand::{thread_rng, Rng};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
@@ -16,6 +17,47 @@ impl Vec3 {
     pub fn new<T1: Into<f64>, T2: Into<f64>, T3: Into<f64>>(x: T1, y: T2, z: T3) -> Vec3 {
         Vec3 {x: x.into(), y: y.into(), z: z.into()}
     }
+
+    pub fn random() -> Vec3 {
+        let mut rng = thread_rng();
+        Vec3 {x: rng.gen(), y: rng.gen(), z: rng.gen()}
+    }
+
+    pub fn random_in_range<T1: Into<f64>, T2: Into<f64>>(min: T1, max: T2) -> Vec3 {
+        let mut rng = thread_rng();
+        let min = min.into();
+        let max = max.into();
+        Vec3 {
+            x: rng.gen_range(min..=max), 
+            y: rng.gen_range(min..=max), 
+            z: rng.gen_range(min..=max)
+        }
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        let mut p;
+        loop {
+            p = Vec3::random_in_range(-1,1);
+            if p.length_squared() < 1.0 {
+                break;
+            }
+        }
+        p
+    }
+
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::random_in_unit_sphere().unit_vector()
+    }
+
+    pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
+        let in_unit_sphere = Vec3::random_in_unit_sphere();
+        if in_unit_sphere.dot(normal) > 0.0 {// In the same hemisphere as the normal
+            return in_unit_sphere;
+        } 
+        Vec3::zero() - in_unit_sphere
+    }
+
+
 
     pub fn x(&self) -> f64 {
         self.x
@@ -330,9 +372,9 @@ impl Color {
         let mut b = self.z;
 
         let scale = 1.0 / (samples_per_pixel as f64);
-        r *= scale;
-        g *= scale;
-        b *= scale;
+        r   = (scale * r).sqrt();
+        g = (scale * g).sqrt();
+        b = (scale * b).sqrt();
 
         let ir = (256.0 * r.clamp(0.0, 0.999)) as u8;
         let ig = (256.0 * g.clamp(0.0, 0.999)) as u8;
