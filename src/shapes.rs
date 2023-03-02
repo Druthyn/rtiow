@@ -24,9 +24,15 @@ impl HitRecord {
         }
     }
 
-    pub fn get_normal(&self)-> Vec3 {
+    pub fn get_normal(&self) -> Vec3 {
         self.normal
     }
+
+    pub fn get_p(&self) -> Point3 {
+        self.p
+    }
+
+
 }
 
 pub trait Hittable {

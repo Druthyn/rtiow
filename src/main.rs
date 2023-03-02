@@ -2,6 +2,7 @@ pub mod ray;
 pub mod vec3;
 pub mod shapes;
 pub mod camera;
+pub mod materials;
 
 use rayon::prelude::*;
 
@@ -17,9 +18,10 @@ use rand::{thread_rng, Rng};
 
 
 const ASPECT_RATIO: f64 = 16.0/9.0;
-const IMAGE_WIDTH: u32 = 2560;
+const IMAGE_WIDTH: u32 = 400;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const SAMPLES_PER_PIXEL: u64 = 100;
+const MAX_DEPTH: i32 = 50;
 
 enum DebugSaving {
     Choose,
@@ -29,12 +31,17 @@ enum DebugSaving {
 
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
-fn ray_color<T: Hittable>(r: &Ray, world: &T) -> Color { 
+fn ray_color<T: Hittable>(r: &Ray, world: &T, depth: i32) -> Color { 
 
-    let res = world.hit(r, 0.0, f64::INFINITY);
+    if depth <= 0 {
+        return Color::zero()
+    }
+
+    let res = world.hit(r, 0.0001, f64::INFINITY);
 
     if let Some(shape) = res {
-        return 0.5 * (shape.get_normal() + Color::new(1, 1, 1));
+        let target = shape.get_p() + Vec3::random_in_hemisphere(&shape.get_normal());//shape.get_normal() + Vec3::random_unit_vector();
+        return 0.5 * ray_color(&Ray::new(shape.get_p(), target - shape.get_p()), world, depth-1);
     }
 
     let unit_direction: Vec3 = r.direction().unit_vector();
@@ -64,7 +71,7 @@ fn main() {
                         let v = (j as f64 + rng.gen::<f64>()) / ((IMAGE_HEIGHT-1) as f64);
 
                         let r = cam.get_ray(u, v);
-                        pixel_color = pixel_color + ray_color(&r, &world);
+                        pixel_color = pixel_color + ray_color(&r, &world, MAX_DEPTH);
                     }
                     pixel_color.to_rgba(255, SAMPLES_PER_PIXEL)
                 }).collect();
