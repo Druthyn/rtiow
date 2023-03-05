@@ -12,7 +12,7 @@ pub struct HitRecord {
     normal: Vec3,
     mat: Arc<dyn Scatter>,
     t: f64,
-    front_face: bool
+    pub front_face: bool
 }
 
 impl HitRecord {
