@@ -1,13 +1,18 @@
+use std::sync::Arc;
+
+use crate::materials::Scatter;
 use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;
-use crate::shapes::{Hittable, HitRecord};
+use crate::shapes::{Hit, HitRecord};
+
 
 pub struct Sphere {
     center: Point3,
-    radius: f64
+    radius: f64,
+    mat: Arc<dyn Scatter>
 }
 
-impl Hittable for Sphere {
+impl Hit for Sphere {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
     
         let oc: Vec3 = r.origin() - self.center;
@@ -31,16 +36,17 @@ impl Hittable for Sphere {
         let p = r.at(root);
         let outward_normal: Vec3 = (p - self.center) / self.radius;
 
-        let rec = HitRecord::new(p, root, r, &outward_normal);
+        let rec = HitRecord::new(p, root, r, &outward_normal, self.mat.clone());
         Some(rec)
     }
 }
 
 impl Sphere {
-    pub fn new<T: Into<f64>>(cen: Point3, r: T) -> Sphere{
+    pub fn new<T: Into<f64>>(cen: Point3, r: T, mat: Arc<dyn Scatter>) -> Sphere{
         Sphere { 
             center: cen, 
-            radius: r.into()
+            radius: r.into(),
+            mat,
         }
     }
 }
