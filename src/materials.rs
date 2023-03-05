@@ -17,7 +17,7 @@ impl Lambertian {
 }
 
 impl Scatter for Lambertian {            
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+    fn scatter(&self, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = rec.get_normal() + Vec3::random_unit_vector();
 
         if scatter_direction.is_near_zero() {
@@ -31,12 +31,14 @@ impl Scatter for Lambertian {
 
 pub struct Metal {
     albedo: Color,
+    fuzz: f64,
 }
 
 impl Metal {
-    pub fn new(a: Color) -> Self {
+    pub fn new(a: Color, fuzz: f64) -> Self {
         Metal {
             albedo: a,
+            fuzz,
         }
     }
 }
@@ -46,7 +48,7 @@ impl Scatter for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflected = r_in.direction().reflect(&rec.get_normal()).unit_vector();
 
-        let scattered = Ray::new(rec.get_p(), reflected);
+        let scattered = Ray::new(rec.get_p(), reflected + self.fuzz*Vec3::random_in_unit_sphere());
         
         if scattered.direction().dot(&rec.get_normal()) <= 0.0 {
             return None
