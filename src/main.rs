@@ -4,15 +4,18 @@ pub mod shapes;
 pub mod camera;
 pub mod materials;
 
+use std::sync::Arc;
+
 use rayon::prelude::*;
 
 
+use crate::materials::{Lambertian, Metal};
 use crate::vec3::{Point3, Vec3, Color};
 use crate::ray::Ray;
-use crate::shapes::{Hittable, HittableList, sphere::Sphere};
+use crate::shapes::{Hit, HittableList, sphere::Sphere};
 use crate::camera::Camera;
 
-use image::{ImageBuffer, Rgba};
+use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
 
@@ -31,7 +34,7 @@ enum DebugSaving {
 
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
-fn ray_color<T: Hittable>(r: &Ray, world: &T, depth: i32) -> Color { 
+fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color { 
 
     if depth <= 0 {
         return Color::zero()
@@ -40,8 +43,11 @@ fn ray_color<T: Hittable>(r: &Ray, world: &T, depth: i32) -> Color {
     let res = world.hit(r, 0.0001, f64::INFINITY);
 
     if let Some(shape) = res {
-        let target = shape.get_p() + Vec3::random_in_hemisphere(&shape.get_normal());//shape.get_normal() + Vec3::random_unit_vector();
-        return 0.5 * ray_color(&Ray::new(shape.get_p(), target - shape.get_p()), world, depth-1);
+        let scatter = shape.get_mat().scatter(r, &shape);
+        if let Some((att, scat)) = scatter {
+            return att * ray_color(&scat, world, depth-1)
+        }
+        return Color::new(0,0,0);
     }
 
     let unit_direction: Vec3 = r.direction().unit_vector();
@@ -51,9 +57,18 @@ fn ray_color<T: Hittable>(r: &Ray, world: &T, depth: i32) -> Color {
 
 fn main() {
 
-    let mut world = HittableList::new(Sphere::new(Point3::new(0, 0, -1), 0.5));
-    world.add(Sphere::new(Point3::new(0, -100.5, -1), 100));
+    
+    let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let material_center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
 
+    let material_left   = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
+    let material_right  = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+
+    let mut world = HittableList::new();
+    world.push(Box::new(Sphere::new(Point3::new(0, 0, -1), 0.5, material_center)));
+    world.push(Box::new(Sphere::new(Point3::new(0, -100.5, -1), 100, material_ground)));
+    world.push(Box::new(Sphere::new(Point3::new(-1, 0, -1),   0.5, material_left)));
+    world.push(Box::new(Sphere::new(Point3::new(1, 0, -1),   0.5, material_right)));
 
     let cam: Camera = Camera::new();
 

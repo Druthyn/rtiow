@@ -98,6 +98,15 @@ impl Vec3 {
     pub fn unit_vector(&self) -> Vec3 {
         self / self.length()
     }
+
+    pub fn is_near_zero(&self) -> bool {
+        let s = 1e-8;
+        f64::abs(self.x) < s && f64::abs(self.y) < s && f64::abs(self.z) < s
+    }
+
+    pub fn reflect(&self, n: &Vec3) -> Vec3 {
+        self - 2.0*self.dot(n) * *n
+    }
 }
 
 impl Display for Vec3 {
@@ -328,6 +337,17 @@ impl Mul<Vec3> for f64 {
     }
 
     
+}
+
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+    fn mul(self, rhs: Self) -> Self::Output {
+        Vec3 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+        }
+    }
 }
 
 // Division of vec3 by f64, and potential ref combinations
