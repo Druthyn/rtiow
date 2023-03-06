@@ -6,10 +6,11 @@ pub mod materials;
 
 use std::sync::Arc;
 
+use materials::Scatter;
 use rayon::prelude::*;
 
 
-use crate::materials::{Lambertian, Metal};
+use crate::materials::{Lambertian, Metal, Dialectric};
 use crate::vec3::{Point3, Vec3, Color};
 use crate::ray::Ray;
 use crate::shapes::{Hit, HittableList, sphere::Sphere};
@@ -20,8 +21,8 @@ use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
 
 
-const ASPECT_RATIO: f64 = 16.0/9.0;
-const IMAGE_WIDTH: u32 = 400;
+const ASPECT_RATIO: f64 = 3.0/2.0;
+const IMAGE_WIDTH: u32 = 1200;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const SAMPLES_PER_PIXEL: u64 = 100;
 const MAX_DEPTH: i32 = 50;
@@ -55,22 +56,68 @@ fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
     (1.0 - t) * Color::new(1, 1, 1) + t*Color::new(0.5, 0.7, 1.0)
 }
 
-fn main() {
-
-    
-    let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let material_center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-
-    let material_left   = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8)));
-    let material_right  = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2)));
+fn random_scene() -> HittableList {
+    let mut rng = thread_rng();
 
     let mut world = HittableList::new();
-    world.push(Box::new(Sphere::new(Point3::new(0, 0, -1), 0.5, material_center)));
-    world.push(Box::new(Sphere::new(Point3::new(0, -100.5, -1), 100, material_ground)));
-    world.push(Box::new(Sphere::new(Point3::new(-1, 0, -1),   0.5, material_left)));
-    world.push(Box::new(Sphere::new(Point3::new(1, 0, -1),   0.5, material_right)));
+    let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
+    world.push(Box::new(Sphere::new(Point3::new(0, -1000, 0), 1000, ground_material)));
 
-    let cam: Camera = Camera::new();
+    for a in -11..=11 {
+        for b in -11..=11 {
+            let a_prime= a as f64 + (0.9*rng.gen::<f64>());
+            let b_prime= b as f64 + (0.9*rng.gen::<f64>());
+            let center = Point3::new(a_prime, 0.2, b_prime);
+            
+            if (center - Point3::new(4, 0.2, 0)).length() > 0.9 {
+                let sphere_material: Arc<dyn Scatter> = match rng.gen() {
+                    x if (0.0..=0.8).contains(&x) => {
+                        let albedo = Color::random() * Color::random();
+                        Arc::new(Lambertian::new(albedo))
+                    }
+                    x if (0.8..=0.95).contains(&x) => {
+                        let albedo = Color::random_in_range(0.5, 1);
+                        let fuzz = rng.gen_range(0.0..0.5);
+                        Arc::new(Metal::new(albedo, fuzz))
+                    }
+                    _ => {
+                        Arc::new(Dialectric::new(1.5))
+                    }
+                };
+                world.push(Box::new(Sphere::new(center, 0.2, sphere_material)));
+            }
+        }
+    }
+
+    let material1 = Arc::new(Dialectric::new(1.5));
+    world.push(Box::new(Sphere::new(Point3::new(0, 1, 0), 1.0, material1)));
+
+    let material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    world.push(Box::new(Sphere::new(Point3::new(-4, 1, 0), 1.0, material2)));
+
+    let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    world.push(Box::new(Sphere::new(Point3::new(4, 1, 0), 1.0, material3)));
+
+    world
+}
+
+fn main() {
+
+    let world = random_scene();
+
+
+    
+    let look_from = Point3::new(13, 2, 3);
+    let look_at = Point3::new(0, 0, 0);
+    let cam: Camera = Camera::new(
+        look_from,
+        look_at,
+        Vec3::new(0, 1, 0),
+        20.0, 
+        ASPECT_RATIO,
+        0.1,
+        10.0
+    );
 
 //    Rendering
     let pixels = (0..IMAGE_HEIGHT)
