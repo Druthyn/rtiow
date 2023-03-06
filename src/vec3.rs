@@ -39,10 +39,9 @@ impl Vec3 {
         loop {
             p = Vec3::random_in_range(-1,1);
             if p.length_squared() < 1.0 {
-                break;
+                return p
             }
         }
-        p
     }
 
     pub fn random_unit_vector() -> Vec3 {
@@ -57,6 +56,16 @@ impl Vec3 {
         Vec3::zero() - in_unit_sphere
     }
 
+    pub fn random_in_unit_disk() -> Vec3 {
+        let mut p;
+        let mut rng = thread_rng();
+        loop {
+            p = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0);
+            if p.length_squared() < 1.0 {
+                return p
+            }
+        }
+    }
 
 
     pub fn x(&self) -> f64 {
