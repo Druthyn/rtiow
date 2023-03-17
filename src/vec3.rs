@@ -131,6 +131,53 @@ impl Display for Vec3 {
     }
 }
 
+// https://stackoverflow.com/questions/55266061/how-to-implement-bidirectional-lhs-and-rhs-operators-in-rust
+// gen ref combo by using *operator on the input
+macro_rules! vec3_op_for     {
+    ($($path:ident)::+, $fn:ident, $ty:ty) => {
+        impl $Op<$ty> for Vec3 {
+            type Output = Vec3;
+            fn $method(self, other: $ty) -> Self::Output {
+                Vec3 {
+                    a: self.x.$fn(other.into()),
+                    b: self.y.$fn(other.into()),
+                    c: self.z.$fn(other.into()),
+                }
+            }
+        }
+        impl $Op<Vec3> for $ty {
+            type Output = Vec3;
+            fn $method(self, other: Vec3) -> Self::Output {
+                Vec3 {
+                    a: other.a.$fn(self.into()),
+                    b: other.b.$fn(self.into()),
+                    c: other.c.$fn(self.into()),
+                }
+            }
+        }
+    };
+}
+
+
+// Given an operator and type, call name3 for vec3 type of each ref combo
+macro_rules! vec3_name_2 {
+    (impl $Op:ident, $method:ident for $input_type:ty) => {
+        vec3_name_3!(impl $Op, $method for $input_type, Vec3);
+        vec3_name_3!(impl $Op, $method for Vec3, $input_type);
+    };
+}
+
+
+
+macro_rules! vec3_operators_for {
+    ($input_type:ty) => {
+        // create operator methods for all operators between vec3 and given type
+        vec3_name_2!(impl Add, add for $input_type);
+    };
+}
+
+vec3_operators_for!(f64);
+
 // Operator definitions for vec3
 
 // Addition of vec3 with vec3, and potential ref combinations
