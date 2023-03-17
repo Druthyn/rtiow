@@ -8,7 +8,10 @@ use std::sync::Arc;
 
 use materials::Scatter;
 use rayon::prelude::*;
-
+use indicatif::{ParallelProgressIterator, ProgressStyle};
+use image::ImageBuffer;
+use piston_window::EventLoop;
+use rand::{thread_rng, Rng};
 
 use crate::materials::{Lambertian, Metal, Dialectric};
 use crate::vec3::{Point3, Vec3, Color};
@@ -16,13 +19,10 @@ use crate::ray::Ray;
 use crate::shapes::{Hit, HittableList, sphere::Sphere};
 use crate::camera::Camera;
 
-use image::ImageBuffer;
-use piston_window::EventLoop;
-use rand::{thread_rng, Rng};
 
 
 const ASPECT_RATIO: f64 = 3.0/2.0;
-const IMAGE_WIDTH: u32 = 1200;
+const IMAGE_WIDTH: u32 = 200;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const SAMPLES_PER_PIXEL: u64 = 100;
 const MAX_DEPTH: i32 = 50;
@@ -102,11 +102,9 @@ fn random_scene() -> HittableList {
 }
 
 fn main() {
-
+    
     let world = random_scene();
 
-
-    
     let look_from = Point3::new(13, 2, 3);
     let look_at = Point3::new(0, 0, 0);
     let cam: Camera = Camera::new(
@@ -119,10 +117,11 @@ fn main() {
         10.0
     );
 
+    let style = ProgressStyle::with_template("[{elapsed} elapsed] [Expected in: {eta}] {wide_bar:40.cyan/blue} {pos:>  7}/{len:7}").unwrap();
 //    Rendering
-    let pixels = (0..IMAGE_HEIGHT)
+    let pixels: Vec<u8> = (0..IMAGE_HEIGHT)
                 .into_par_iter()
-                .rev()
+                .progress_with_style(style)
                 .flat_map_iter(|j| (0..IMAGE_WIDTH).map(move |i| (i, j)))
                 .flat_map_iter(|(i, j)| {
                     let mut pixel_color: Color = Color::zero();
@@ -136,8 +135,15 @@ fn main() {
                         pixel_color = pixel_color + ray_color(&r, &world, MAX_DEPTH);
                     }
                     pixel_color.to_rgba(255, SAMPLES_PER_PIXEL)
-                }).collect();
-           
+                })
+                .collect();
+    
+    let pixels = pixels.chunks(4 * IMAGE_WIDTH as usize) // times 4 due to R G B and A channels for each pixel
+                       .rev()                   
+                       .flatten()
+                       .copied()
+                       .collect();
+    
     let image_buffer = ImageBuffer::from_vec(IMAGE_WIDTH, IMAGE_HEIGHT, pixels).unwrap();
     
     println!("\nDone.");
