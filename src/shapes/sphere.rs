@@ -7,15 +7,17 @@ use crate::shapes::{Hit, HitRecord};
 
 
 pub struct Sphere {
-    center: Point3,
+    center0: Point3, center1: Point3,
+    time0: f64, time1: f64,
     radius: f64,
-    mat: Arc<dyn Scatter>
+    mat: Arc<dyn Scatter>,
+    is_static: bool,
 }
 
 impl Hit for Sphere {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
     
-        let oc: Vec3 = r.origin() - self.center;
+        let oc: Vec3 = r.origin() - self.center(r.time());
 
         let a = r.direction().length_squared();
         let half_b = oc.dot(&r.direction());
@@ -34,7 +36,7 @@ impl Hit for Sphere {
         }
 
         let p = r.at(root);
-        let outward_normal: Vec3 = (p - self.center) / self.radius;
+        let outward_normal: Vec3 = (p - self.center(r.time())) / self.radius;
 
         let rec = HitRecord::new(p, root, r, &outward_normal, self.mat.clone());
         Some(rec)
@@ -42,11 +44,38 @@ impl Hit for Sphere {
 }
 
 impl Sphere {
-    pub fn new<T: Into<f64>>(cen: Point3, r: T, mat: Arc<dyn Scatter>) -> Sphere{
+    pub fn new_static<T: Into<f64>>(cen: Point3, r: T, mat: Arc<dyn Scatter>) -> Sphere{
         Sphere { 
-            center: cen, 
+            center0: cen, 
+            center1: cen,
+            time0: 0.0, 
+            time1: 0.0,
             radius: r.into(),
             mat,
+            is_static: true,
         }
+    }
+
+    pub fn new_moving<T: Into<f64>>(center0: Point3, 
+                                    center1: Point3, 
+                                    r: T, 
+                                    mat: Arc<dyn Scatter>, 
+                                    time0: f64, 
+                                    time1: f64) -> Sphere{
+ 
+        Sphere { 
+            center0, center1,
+            time0, time1,
+            radius: r.into(),
+            mat,
+            is_static: false
+        }
+    }
+
+    pub fn center(&self, time: f64) -> Point3 {
+        if self.is_static {
+            return self.center0;
+        }
+        self.center0 + ((time - self.time0) / (self.time1 - self.time0)) * (self.center1 - self.center0)
     }
 }

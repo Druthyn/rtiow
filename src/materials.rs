@@ -19,13 +19,13 @@ impl Lambertian {
 }
 
 impl Scatter for Lambertian {            
-    fn scatter(&self, _r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = rec.get_normal() + Vec3::random_unit_vector();
 
         if scatter_direction.is_near_zero() {
             scatter_direction = rec.get_normal();
         }
-        let scattered = Ray::new(rec.get_p(), scatter_direction);
+        let scattered = Ray::new(rec.get_p(), scatter_direction, r_in.time());
         Some((self.albedo, scattered))
     }
 }
@@ -50,7 +50,7 @@ impl Scatter for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflected = r_in.direction().reflect(&rec.get_normal()).unit_vector();
 
-        let scattered = Ray::new(rec.get_p(), reflected + self.fuzz*Vec3::random_in_unit_sphere());
+        let scattered = Ray::new(rec.get_p(), reflected + self.fuzz*Vec3::random_in_unit_sphere(), r_in.time());
         
         if scattered.direction().dot(&rec.get_normal()) <= 0.0 {
             return None
@@ -99,7 +99,7 @@ impl Scatter for Dialectric {
             unit_direction.reflect(&rec.get_normal())
         };
                             
-        let scattered = Ray::new(rec.get_p(), direction);
+        let scattered = Ray::new(rec.get_p(), direction, r_in.time());
         Some((Color::new(1,1,1), scattered))
     }
 }
