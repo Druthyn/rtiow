@@ -21,8 +21,8 @@ use crate::camera::Camera;
 
 
 
-const ASPECT_RATIO: f64 = 3.0/2.0;
-const IMAGE_WIDTH: u32 = 200;
+const ASPECT_RATIO: f64 = 16.0/9.0;
+const IMAGE_WIDTH: u32 = 400;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const SAMPLES_PER_PIXEL: u64 = 100;
 const MAX_DEPTH: i32 = 50;
@@ -61,7 +61,7 @@ fn random_scene() -> HittableList {
 
     let mut world = HittableList::new();
     let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.push(Box::new(Sphere::new(Point3::new(0, -1000, 0), 1000, ground_material)));
+    world.push(Box::new(Sphere::new_static(Point3::new(0, -1000, 0), 1000, ground_material)));
 
     for a in -11..=11 {
         for b in -11..=11 {
@@ -70,33 +70,34 @@ fn random_scene() -> HittableList {
             let center = Point3::new(a_prime, 0.2, b_prime);
             
             if (center - Point3::new(4, 0.2, 0)).length() > 0.9 {
-                let sphere_material: Arc<dyn Scatter> = match rng.gen() {
+                let sphere: Sphere = match rng.gen() {
                     x if (0.0..=0.8).contains(&x) => {
                         let albedo = Color::random() * Color::random();
-                        Arc::new(Lambertian::new(albedo))
+                        let center2 = center + Point3::new(0, rng.gen::<f64>()/2.0, 0);
+                        Sphere::new_moving(center, center2, 0.2, Arc::new(Lambertian::new(albedo)), 0.0, 1.0)
                     }
                     x if (0.8..=0.95).contains(&x) => {
                         let albedo = Color::random_in_range(0.5, 1);
                         let fuzz = rng.gen_range(0.0..0.5);
-                        Arc::new(Metal::new(albedo, fuzz))
+                        Sphere::new_static(center, 0.2, Arc::new(Metal::new(albedo, fuzz)))
                     }
                     _ => {
-                        Arc::new(Dialectric::new(1.5))
+                        Sphere::new_static(center, 0.2, Arc::new(Dialectric::new(1.5)))                        
                     }
                 };
-                world.push(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                world.push(Box::new(sphere));
             }
         }
     }
 
     let material1 = Arc::new(Dialectric::new(1.5));
-    world.push(Box::new(Sphere::new(Point3::new(0, 1, 0), 1.0, material1)));
+    world.push(Box::new(Sphere::new_static(Point3::new(0, 1, 0), 1.0, material1)));
 
     let material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
-    world.push(Box::new(Sphere::new(Point3::new(-4, 1, 0), 1.0, material2)));
+    world.push(Box::new(Sphere::new_static(Point3::new(-4, 1, 0), 1.0, material2)));
 
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.push(Box::new(Sphere::new(Point3::new(4, 1, 0), 1.0, material3)));
+    world.push(Box::new(Sphere::new_static(Point3::new(4, 1, 0), 1.0, material3)));
 
     world
 }
@@ -114,7 +115,9 @@ fn main() {
         20.0, 
         ASPECT_RATIO,
         0.1,
-        10.0
+        10.0,
+        0.0,
+        1.0,
     );
 
     let style = ProgressStyle::with_template("[{elapsed} elapsed] [Expected in: {eta}] {wide_bar:40.cyan/blue} {pos:>  7}/{len:7}").unwrap();
