@@ -120,7 +120,7 @@ fn main() {
         1.0,
     );
 
-    let style = ProgressStyle::with_template("[{elapsed} elapsed] [Expected in: {eta}] {wide_bar:40.cyan/blue} {pos:>  7}/{len:7}").unwrap();
+    let style = ProgressStyle::with_template("[Elapsed: {elapsed_precise}] Eta: {eta_precise} {bar:40.cyan/blue} {pos:>7}/{len:7}").unwrap();
 //    Rendering
     let pixels: Vec<u8> = (0..IMAGE_HEIGHT)
                 .into_par_iter()
