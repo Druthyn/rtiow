@@ -3,6 +3,7 @@ pub mod vec3;
 pub mod shapes;
 pub mod camera;
 pub mod materials;
+pub mod aabb;
 
 use std::sync::Arc;
 

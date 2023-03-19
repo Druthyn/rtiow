@@ -6,6 +6,7 @@ use std::sync::Arc;
 use crate::materials::Scatter;
 use crate::vec3::{Point3, Vec3}; 
 use crate::ray::Ray;
+use crate::aabb::Aabb;
 
 pub struct HitRecord {
     p: Point3,
@@ -47,6 +48,7 @@ impl HitRecord {
 
 pub trait Hit: Send + Sync {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>;
 }
 
 pub type HittableList = Vec<Box<dyn Hit>>;
