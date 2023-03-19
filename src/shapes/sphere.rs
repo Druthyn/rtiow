@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::aabb::Aabb;
 use crate::materials::Scatter;
 use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;
@@ -40,6 +41,19 @@ impl Hit for Sphere {
 
         let rec = HitRecord::new(p, root, r, &outward_normal, self.mat.clone());
         Some(rec)
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
+        if self.is_static {
+            return Some(Aabb::new(self.center0 - Vec3::new(self.radius, self.radius, self.radius),
+            self.center0 + Vec3::new(self.radius, self.radius, self.radius)))    
+        }
+        let box0 = Aabb::new(self.center(time0) - Vec3::new(self.radius, self.radius, self.radius),
+                             self.center(time0) + Vec3::new(self.radius, self.radius, self.radius));
+        let box1 = Aabb::new(self.center(time1) - Vec3::new(self.radius, self.radius, self.radius),
+                             self.center(time1) + Vec3::new(self.radius, self.radius, self.radius));                             
+
+        Some(Aabb::surrounding_box(box0, box1))
     }
 }
 
