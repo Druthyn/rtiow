@@ -1,4 +1,4 @@
-use std::{ops::{Add, Sub, Mul, Div}, fmt::Display};
+use std::{ops::{Add, Sub, Mul, Div, Index}, fmt::Display};
 use rand::{thread_rng, Rng};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -128,6 +128,19 @@ impl Vec3 {
 impl Display for Vec3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Vec3 ({}, {}, {})", self.x, self.y, self.z)
+    }
+}
+
+impl Index<u32> for Vec3 {
+    type Output = f64;
+
+    fn index(&self, index: u32) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Index {} out of bounds", index),
+        }
     }
 }
 
