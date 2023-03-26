@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::materials::Scatter;
 use crate::vec3::{Point3, Vec3}; 
 use crate::ray::Ray;
-use crate::aabb::Aabb;
+use crate::bvh::aabb::Aabb;
 
 pub struct HitRecord {
     p: Point3,
@@ -42,6 +42,10 @@ impl HitRecord {
         self.mat.clone()
     }
 
+    pub fn t(&self) -> f64 {
+        self.t
+    }
+
 
 }
 
@@ -68,5 +72,25 @@ impl Hit for HittableList {
         }
 
         closest_res
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
+        if self.is_empty() {
+            return None;
+        }
+        let mut output_box;
+        match self.first().unwrap().bounding_box(time0, time1) {
+            Some(temp_box) =>  output_box = temp_box,
+            None => return None,
+        }
+        for object in &self[1..] {
+            
+            match object.bounding_box(time0, time1) {
+                None => return None,
+                Some(aabb) => output_box = Aabb::surrounding_box(output_box, aabb)
+            }
+        }            
+        
+        Some(output_box)
     }
 }

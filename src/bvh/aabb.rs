@@ -1,5 +1,6 @@
 use crate::{vec3::Point3, ray::Ray};
 
+#[derive(Debug, Copy, Clone)]
 pub struct Aabb {
     minimum: Point3,
     maximum: Point3,
@@ -22,7 +23,7 @@ impl Aabb {
         self.maximum
     }
 
-    pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> bool {
+    pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<bool> {
         for a in 0..3 {
             let mut t_min = t_min;
             let mut t_max = t_max;
@@ -39,10 +40,25 @@ impl Aabb {
                 t_max = t1;
             } 
             if t_max <= t_min {
-                return false
+                return None
             }
         }
-        true
+        Some(true)
+    }
+
+    pub fn surrounding_box(box0: Aabb, box1: Aabb) -> Aabb {
+        let small = Point3::new(
+            box0.min().x().min(box1.min().x()),
+            box0.min().y().min(box1.min().y()),
+            box0.min().z().min(box1.min().z()),
+        );
+
+        let big = Point3::new(
+            box0.max().x().max(box1.max().x()),
+            box0.max().y().max(box1.max().y()),
+            box0.max().z().max(box1.max().z()),
+        );
+        Aabb { minimum: small, maximum: big }
     }
 
 }
