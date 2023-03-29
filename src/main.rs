@@ -7,6 +7,7 @@ pub mod bvh;
 
 use std::sync::Arc;
 
+use bvh::BVH;
 use materials::Scatter;
 use rayon::prelude::*;
 use indicatif::{ParallelProgressIterator, ProgressStyle};
@@ -27,6 +28,8 @@ const IMAGE_WIDTH: u32 = 400;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
 const SAMPLES_PER_PIXEL: u64 = 100;
 const MAX_DEPTH: i32 = 50;
+const TIME0: f64 = 0.0;
+const TIME1: f64 = 1.0;
 
 enum DebugSaving {
     Choose,
@@ -36,7 +39,7 @@ enum DebugSaving {
 
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
-fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color { 
+fn ray_color(r: &Ray, world: &Box<dyn Hit>, depth: i32) -> Color { 
 
     if depth <= 0 {
         return Color::zero()
@@ -56,8 +59,7 @@ fn ray_color(r: &Ray, world: &HittableList, depth: i32) -> Color {
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * Color::new(1, 1, 1) + t*Color::new(0.5, 0.7, 1.0)
 }
-
-fn random_scene() -> HittableList {
+fn random_scene() -> Box<dyn Hit> {
     let mut rng = thread_rng();
 
     let mut world = HittableList::new();
@@ -100,7 +102,7 @@ fn random_scene() -> HittableList {
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.push(Box::new(Sphere::new_static(Point3::new(4, 1, 0), 1.0, material3)));
 
-    world
+    Box::new(BVH::new(world, TIME0, TIME1))
 }
 
 fn main() {
@@ -117,8 +119,8 @@ fn main() {
         ASPECT_RATIO,
         0.1,
         10.0,
-        0.0,
-        1.0,
+        TIME0,
+        TIME1,
     );
 
     let style = ProgressStyle::with_template("[Elapsed: {elapsed_precise}] Eta: {eta_precise} {bar:40.cyan/blue} {pos:>7}/{len:7}").unwrap();
