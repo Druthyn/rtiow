@@ -131,10 +131,10 @@ impl Display for Vec3 {
     }
 }
 
-impl Index<u32> for Vec3 {
+impl Index<usize> for Vec3 {
     type Output = f64;
 
-    fn index(&self, index: u32) -> &Self::Output {
+    fn index(&self, index: usize) -> &Self::Output {
         match index {
             0 => &self.x,
             1 => &self.y,
