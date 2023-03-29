@@ -74,6 +74,15 @@ impl Hit for HittableList {
     }
 
     fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
-        todo!()
+        match self.first() {
+            Some(first) => 
+                match first.bounding_box(time0, time1) {
+                    Some(bbox) => 
+                        self.iter().skip(1).try_fold(bbox, |acc, hitable|
+                            hitable.bounding_box(time0, time1).map(|bbox| Aabb::surrounding_box(&acc, &bbox))),
+                    _ => None,
+                },
+            _ => None,
+        }
     }
 }
