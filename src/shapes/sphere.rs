@@ -54,7 +54,7 @@ impl Hit for Sphere {
         let box1 = Aabb::new(self.center(time1) - Vec3::new(self.radius, self.radius, self.radius),
                              self.center(time1) + Vec3::new(self.radius, self.radius, self.radius));                             
 
-        Some(Aabb::surrounding_box(box0, box1))
+        Some(Aabb::surrounding_box(&box0, &box1))
     }
 }
 
