@@ -70,11 +70,11 @@ fn ray_color(r: &Ray, world: &Box<dyn Hit>, depth: i32) -> Color {
 fn random_scene() -> Box<dyn Hit> {
     let mut rng = thread_rng();
 
-    let mut world = HittableList::new();
+    let mut world = HittableList::default();
 
 
     let checker = Arc::new(Lambertian::new(Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)))));
-    world.push(Box::new(Sphere::new_static(Point3::new(0, -1000, 0), 1000, checker)));
+    world.push(Sphere::new_static(Point3::new(0, -1000, 0), 1000, checker));
 
     for a in -11..=11 {
         for b in -11..=11 {
@@ -98,34 +98,34 @@ fn random_scene() -> Box<dyn Hit> {
                         Sphere::new_static(center, 0.2, Arc::new(Dialectric::new(1.5)))                        
                     }
                 };
-                world.push(Box::new(sphere));
+                world.push(sphere);
             }
         }
     }
 
     let material1 = Arc::new(Dialectric::new(1.5));
-    world.push(Box::new(Sphere::new_static(Point3::new(0, 1, 0), 1.0, material1)));
+    world.push(Sphere::new_static(Point3::new(0, 1, 0), 1.0, material1));
 
     let material2 = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.4, 0.2, 0.1))));
-    world.push(Box::new(Sphere::new_static(Point3::new(-4, 1, 0), 1.0, material2)));
+    world.push(Sphere::new_static(Point3::new(-4, 1, 0), 1.0, material2));
 
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
-    world.push(Box::new(Sphere::new_static(Point3::new(4, 1, 0), 1.0, material3)));
+    world.push(Sphere::new_static(Point3::new(4, 1, 0), 1.0, material3));
 
-    Box::new(BVH::new(world, TIME0, TIME1))
+    Box::new(BVH::new(world.list, TIME0, TIME1))
 }
 
 #[allow(dead_code)]
 fn two_spheres() -> Box<dyn Hit> {
-    let mut objects = HittableList::new();
+    let mut objects = HittableList::default();
 
     let checker1 = Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)));
     let checker2 = Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)));
 
-    objects.push(Box::new(Sphere::new_static(Point3::new(0,-10, 0), 10, Arc::new(Lambertian::new(checker1)))));
-    objects.push(Box::new(Sphere::new_static(Point3::new(0,10, 0), 10, Arc::new(Lambertian::new(checker2)))));
+    objects.push(Sphere::new_static(Point3::new(0,-10, 0), 10, Arc::new(Lambertian::new(checker1))));
+    objects.push(Sphere::new_static(Point3::new(0,10, 0), 10, Arc::new(Lambertian::new(checker2))));
 
-    Box::new(BVH::new(objects, TIME0, TIME1))
+    Box::new(BVH::new(objects.list, TIME0, TIME1))
 }
 
 fn main() {
