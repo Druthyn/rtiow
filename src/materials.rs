@@ -1,17 +1,18 @@
 use rand::{thread_rng, Rng};
 
 use crate::{ray::Ray, vec3::{Color, Vec3}, shapes::HitRecord};
+use crate::texture::Texture;
 
 pub trait Scatter :Send + Sync{
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
 }
 
 pub struct Lambertian {
-    albedo: Color,
+    albedo: Box<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(a: Color) -> Self {
+    pub fn new(a: Box<dyn Texture>) -> Self {
         Lambertian {
             albedo: a,
         }
@@ -26,7 +27,8 @@ impl Scatter for Lambertian {
             scatter_direction = rec.get_normal();
         }
         let scattered = Ray::new(rec.get_p(), scatter_direction, r_in.time());
-        Some((self.albedo, scattered))
+        let attenuation = self.albedo.value(rec.u(), rec.v(), rec.p());
+        Some((attenuation, scattered))
     }
 }
 
