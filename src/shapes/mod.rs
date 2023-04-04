@@ -70,7 +70,18 @@ pub trait Hit: Send + Sync {
     fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>;
 }
 
-pub type HittableList = Vec<Box<dyn Hit>>;
+
+#[derive(Default)]
+pub struct HittableList {
+    pub list: Vec<Box<dyn Hit>>
+}
+
+
+impl HittableList {
+    pub fn push(&mut self, x: impl Hit + 'static) {
+        self.list.push(Box::new(x))
+    }
+}
 
 impl Hit for HittableList {
     
@@ -79,7 +90,7 @@ impl Hit for HittableList {
         let mut closest_res = None;
         let mut closest_so_far = t_max;
 
-        for object in self {
+        for object in &self.list {
             if let Some(rec) = object.hit(r, t_min, closest_so_far){
                 closest_so_far = rec.t;
                 closest_res = Some(rec);
@@ -90,11 +101,11 @@ impl Hit for HittableList {
     }
 
     fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
-        match self.first() {
+        match self.list.first() {
             Some(first) => 
                 match first.bounding_box(time0, time1) {
                     Some(bbox) => 
-                        self.iter().skip(1).try_fold(bbox, |acc, hitable|
+                        self.list.iter().skip(1).try_fold(bbox, |acc, hitable|
                             hitable.bounding_box(time0, time1).map(|bbox| Aabb::surrounding_box(&acc, &bbox))),
                     _ => None,
                 },
