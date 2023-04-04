@@ -13,12 +13,14 @@ pub struct HitRecord {
     normal: Vec3,
     mat: Arc<dyn Scatter>,
     t: f64,
+    u: f64,
+    v: f64,
     pub front_face: bool
 }
 
 impl HitRecord {
 
-    fn new(p: Point3, t: f64, r: &Ray, outward_normal: &Vec3, mat: Arc<dyn Scatter>) -> Self {
+    fn new(p: Point3, t: f64, u: f64, v: f64, r: &Ray, outward_normal: &Vec3, mat: Arc<dyn Scatter>) -> Self {
         let front_face = r.direction().dot(outward_normal) < 0.0;
         let normal = if front_face {*outward_normal}else{Vec3::zero()-*outward_normal};
         HitRecord {
@@ -26,6 +28,8 @@ impl HitRecord {
             normal,
             mat,
             t,
+            u,
+            v,
             front_face,
         }
     }
@@ -44,6 +48,18 @@ impl HitRecord {
 
     pub fn t(&self) -> f64 {
         self.t
+    }
+
+    pub fn p(&self) -> &Vec3 {
+        &self.p
+    }
+
+    pub fn u(&self) -> f64 {
+        self.u
+    }
+
+    pub fn v(&self) -> f64 {
+        self.v
     }
 
 }

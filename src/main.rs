@@ -4,16 +4,20 @@ pub mod shapes;
 pub mod camera;
 pub mod materials;
 pub mod bvh;
+pub mod texture;
 
 use std::sync::Arc;
 
 use bvh::BVH;
-use materials::Scatter;
 use rayon::prelude::*;
 use indicatif::{ParallelProgressIterator, ProgressStyle};
 use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
+use texture::SolidColor;
+use texture::checker_texture::CheckerTexture;
+
+
 
 use crate::materials::{Lambertian, Metal, Dialectric};
 use crate::vec3::{Point3, Vec3, Color};
@@ -59,12 +63,16 @@ fn ray_color(r: &Ray, world: &Box<dyn Hit>, depth: i32) -> Color {
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * Color::new(1, 1, 1) + t*Color::new(0.5, 0.7, 1.0)
 }
+
+#[allow(dead_code)]
 fn random_scene() -> Box<dyn Hit> {
     let mut rng = thread_rng();
 
     let mut world = HittableList::new();
-    let ground_material = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
-    world.push(Box::new(Sphere::new_static(Point3::new(0, -1000, 0), 1000, ground_material)));
+
+
+    let checker = Arc::new(Lambertian::new(Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)))));
+    world.push(Box::new(Sphere::new_static(Point3::new(0, -1000, 0), 1000, checker)));
 
     for a in -11..=11 {
         for b in -11..=11 {
@@ -75,7 +83,7 @@ fn random_scene() -> Box<dyn Hit> {
             if (center - Point3::new(4, 0.2, 0)).length() > 0.9 {
                 let sphere: Sphere = match rng.gen() {
                     x if (0.0..=0.8).contains(&x) => {
-                        let albedo = Color::random() * Color::random();
+                        let albedo = Box::new(SolidColor::new(Color::random() * Color::random()));
                         let center2 = center + Point3::new(0, rng.gen::<f64>()/2.0, 0);
                         Sphere::new_moving(center, center2, 0.2, Arc::new(Lambertian::new(albedo)), 0.0, 1.0)
                     }
@@ -96,7 +104,7 @@ fn random_scene() -> Box<dyn Hit> {
     let material1 = Arc::new(Dialectric::new(1.5));
     world.push(Box::new(Sphere::new_static(Point3::new(0, 1, 0), 1.0, material1)));
 
-    let material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    let material2 = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.4, 0.2, 0.1))));
     world.push(Box::new(Sphere::new_static(Point3::new(-4, 1, 0), 1.0, material2)));
 
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
@@ -105,24 +113,61 @@ fn random_scene() -> Box<dyn Hit> {
     Box::new(BVH::new(world, TIME0, TIME1))
 }
 
+#[allow(dead_code)]
+fn two_spheres() -> Box<dyn Hit> {
+    let mut objects = HittableList::new();
+
+    let checker1 = Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)));
+    let checker2 = Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)));
+
+    objects.push(Box::new(Sphere::new_static(Point3::new(0,-10, 0), 10, Arc::new(Lambertian::new(checker1)))));
+    objects.push(Box::new(Sphere::new_static(Point3::new(0,10, 0), 10, Arc::new(Lambertian::new(checker2)))));
+
+    Box::new(BVH::new(objects, TIME0, TIME1))
+}
+
 fn main() {
     
-    let world = random_scene();
+    let world: Box<dyn Hit>;
+    let cam: Camera;
 
-    let look_from = Point3::new(13, 2, 3);
-    let look_at = Point3::new(0, 0, 0);
-    let cam: Camera = Camera::new(
-        look_from,
-        look_at,
-        Vec3::new(0, 1, 0),
-        20.0, 
-        ASPECT_RATIO,
-        0.1,
-        10.0,
-        TIME0,
-        TIME1,
-    );
+    const SCENE: i32 = 2;
+    match SCENE {
+        2 => {
+            world = two_spheres();
 
+            let look_from = Point3::new(13, 2, 3);
+            let look_at = Point3::new(0, 0, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                20.0, 
+                ASPECT_RATIO,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            );
+        },
+        _ => {
+            world = random_scene();
+
+            let look_from = Point3::new(13, 2, 3);
+            let look_at = Point3::new(0, 0, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                20.0, 
+                ASPECT_RATIO,
+                0.1,
+                10.0,
+                TIME0,
+                TIME1,
+            );
+        },
+    }
     let style = ProgressStyle::with_template("[Elapsed: {elapsed_precise}] Eta: {eta_precise} {bar:40.cyan/blue} {pos:>7}/{len:7}").unwrap();
 //    Rendering
     let pixels: Vec<u8> = (0..IMAGE_HEIGHT)

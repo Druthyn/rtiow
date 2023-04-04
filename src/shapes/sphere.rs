@@ -39,8 +39,9 @@ impl Hit for Sphere {
 
         let p = r.at(root);
         let outward_normal: Vec3 = (p - self.center(r.time())) / self.radius;
+        let (u, v) = self.get_sphere_uv(&outward_normal);
 
-        let rec = HitRecord::new(p, root, r, &outward_normal, self.mat.clone());
+        let rec = HitRecord::new(p, root, u, v, r, &outward_normal, self.mat.clone());
         Some(rec)
     }
 
@@ -93,4 +94,14 @@ impl Sphere {
         }
         self.center0 + ((time - self.time0) / (self.time1 - self.time0)) * (self.center1 - self.center0)
     }
+
+    pub fn get_sphere_uv(&self, p: &Point3) -> (f64, f64) {
+        let theta = (-p.y()).acos();
+        let phi = (-p.z()).atan2(p.x()) + std::f64::consts::PI;
+
+        let u = phi / (2.0*std::f64::consts::PI);
+        let v = theta / std::f64::consts::PI;
+        (u, v)
+    }
+
 }
