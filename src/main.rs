@@ -35,6 +35,7 @@ const MAX_DEPTH: i32 = 50;
 const TIME0: f64 = 0.0;
 const TIME1: f64 = 1.0;
 
+#[allow(dead_code)]
 enum DebugSaving {
     Choose,
     Save,
@@ -43,6 +44,7 @@ enum DebugSaving {
 
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
+#[allow(clippy::borrowed_box)]
 fn ray_color(r: &Ray, world: &Box<dyn Hit>, depth: i32) -> Color { 
 
     if depth <= 0 {
