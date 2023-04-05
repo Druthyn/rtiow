@@ -15,7 +15,8 @@ use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
 use texture::SolidColor;
-use texture::checker_texture::CheckerTexture;
+use texture::checker_texture::*;
+use texture::noise_texture::NoiseTexture;
 
 
 
@@ -125,18 +126,50 @@ fn two_spheres() -> Box<dyn Hit> {
     objects.push(Sphere::new_static(Point3::new(0,-10, 0), 10, Arc::new(Lambertian::new(checker1))));
     objects.push(Sphere::new_static(Point3::new(0,10, 0), 10, Arc::new(Lambertian::new(checker2))));
 
-    Box::new(BVH::new(objects.list, TIME0, TIME1))
+    Box::new(objects)
 }
 
-fn main() {
+#[allow(dead_code)]
+fn two_perlin_spheres() -> Box<dyn Hit> {
+
+    let mut objects = HittableList::default();
+
+    let pertext = Box::<NoiseTexture>::default();
+    let pertext1 = Box::<NoiseTexture>::default();
     
+
+    objects.push(Sphere::new_static(Point3::new(0,-1000, 0), 1000, Arc::new(Lambertian::new(pertext))));
+    objects.push(Sphere::new_static(Point3::new(0, 2, 0), 2, Arc::new(Lambertian::new(pertext1))));
+
+    Box::new(objects)    
+}
+
+
+fn main() {
     let world: Box<dyn Hit>;
     let cam: Camera;
 
-    const SCENE: i32 = 2;
+    const SCENE: i32 = 3;
     match SCENE {
         2 => {
             world = two_spheres();
+
+            let look_from = Point3::new(13, 2, 3);
+            let look_at = Point3::new(0, 0, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                20.0, 
+                ASPECT_RATIO,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            );
+        },
+        3 => {
+            world = two_perlin_spheres();
 
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);

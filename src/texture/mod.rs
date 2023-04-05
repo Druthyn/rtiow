@@ -1,4 +1,6 @@
 pub mod checker_texture;
+pub mod noise_texture;
+mod perlin;
 
 use crate::vec3::{Point3, Color};
 
