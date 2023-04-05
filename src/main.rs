@@ -14,9 +14,11 @@ use indicatif::{ParallelProgressIterator, ProgressStyle};
 use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
-use texture::SolidColor;
-use texture::checker_texture::*;
+use texture::{SolidColor, Texture};
+use texture::checker_texture::CheckerTexture;
 use texture::noise_texture::NoiseTexture;
+use texture::image_texture::ImageTexture;
+
 
 
 
@@ -145,11 +147,24 @@ fn two_perlin_spheres() -> Box<dyn Hit> {
 }
 
 
+#[allow(dead_code)]
+fn earth() -> Box<dyn Hit> {
+    let earth_texture: Box<dyn Texture> = match ImageTexture::new("earthmap.jpg".to_string()) {
+        Ok(x) => Box::new(x),
+        Err(_) => Box::new(SolidColor::new_from_rgb(0.0, 1.0, 1.0))
+    };
+        
+    let earth_surface = Arc::new(Lambertian::new(earth_texture));
+
+    let globe = Sphere::new_static(Point3::new(0,0,0), 2, earth_surface);
+    Box::new(globe)
+}
+
 fn main() {
     let world: Box<dyn Hit>;
     let cam: Camera;
 
-    const SCENE: i32 = 3;
+    const SCENE: i32 = 4;
     match SCENE {
         2 => {
             world = two_spheres();
@@ -185,6 +200,22 @@ fn main() {
                 TIME1,
             );
         },
+        4 => {
+            world = earth();
+            let look_from = Point3::new(13, 2, 3);
+            let look_at = Point3::new(0, 0, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                20.0, 
+                ASPECT_RATIO,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            );
+        }
         _ => {
             world = random_scene();
 
