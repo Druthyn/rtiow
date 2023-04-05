@@ -353,6 +353,16 @@ impl Mul<f64> for Vec3 {
 
 }
 
+impl Mul<f64> for &Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, scalar: f64) -> Self::Output {
+        *self * scalar
+    }
+
+}
+
+
 // Multiplication of vec3 with f64, and potential ref combinations TODO
 
 impl Mul<Vec3> for f64 {
