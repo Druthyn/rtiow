@@ -134,8 +134,8 @@ fn two_perlin_spheres() -> Box<dyn Hit> {
 
     let mut objects = HittableList::default();
 
-    let pertext = Box::<NoiseTexture>::default();
-    let pertext1 = Box::<NoiseTexture>::default();
+    let pertext = Box::new(NoiseTexture::new(4.0));
+    let pertext1 = Box::new(NoiseTexture::new(4.0));
     
 
     objects.push(Sphere::new_static(Point3::new(0,-1000, 0), 1000, Arc::new(Lambertian::new(pertext))));
