@@ -3,6 +3,7 @@ use rand::{thread_rng, Rng};
 use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;
 
+#[allow(dead_code)]
 pub struct Camera {
     origin: Point3,
     lower_left_corner: Point3,
@@ -17,7 +18,7 @@ pub struct Camera {
 }
 
 impl Camera {
-
+#[allow(clippy::too_many_arguments)]
     pub fn new(look_from: Point3, 
                loot_at: Point3, 
                v_up: Vec3, 
