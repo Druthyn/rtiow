@@ -17,9 +17,9 @@ pub struct Perlin {
 impl Perlin {
     pub fn new() -> Perlin {
         let mut ranvec = vec![Vec3::zero(); POINTCOUNT as usize];
-        for i in 0..ranvec.len() {
+        (0..ranvec.len()).for_each(|i| {
             ranvec[i] = Vec3::random_in_range(-1, 1).unit_vector()
-        }
+        });
 
 
         fn generate_perm() -> Vec<i32> {
@@ -31,7 +31,6 @@ impl Perlin {
         let perm_x = generate_perm();
         let perm_y = generate_perm();
         let perm_z = generate_perm();
-        // let ranfloat = ranfloat1.to_vec();
         Perlin { ranvec, perm_x, perm_y, perm_z }
     }
 
