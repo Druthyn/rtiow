@@ -6,6 +6,9 @@ This is a Rust implementation of a raytracer, based on the original [Ray Tracing
 
 A raytracer is a program that simulates the behavior of light in a virtual scene. It works by tracing the path of rays of light as they bounce off objects in the scene, until they reach the camera or a light source. The resulting image is a realistic rendering of the scene.
 
+## Book 1 Result
+![image](https://user-images.githubusercontent.com/26893775/230675209-5c1e3096-ebdd-4b04-a89c-033c6233c6a6.png)
+
 ## Usage
 
 To use this raytracer, you'll need to have [Rust install](https://doc.rust-lang.org/book/ch01-01-installation.html)ed on your system. You can then clone this repository and run the following command to build the project:
@@ -17,3 +20,5 @@ $ cargo run
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+
