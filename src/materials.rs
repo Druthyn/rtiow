@@ -1,10 +1,15 @@
 use rand::{thread_rng, Rng};
 
-use crate::{ray::Ray, vec3::{Color, Vec3}, shapes::HitRecord};
+use crate::{ray::Ray, vec3::{Color, Vec3, Point3}, shapes::HitRecord, texture::SolidColor};
 use crate::texture::Texture;
 
-pub trait Scatter :Send + Sync{
-    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
+pub trait Material :Send + Sync{
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord) -> Option<(Color, Ray)> {
+        None
+    }
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0,0,0)
+    }
 }
 
 pub struct Lambertian {
@@ -19,7 +24,7 @@ impl Lambertian {
     }
 }
 
-impl Scatter for Lambertian {            
+impl Material for Lambertian {            
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = rec.get_normal() + Vec3::random_unit_vector();
 
@@ -31,7 +36,6 @@ impl Scatter for Lambertian {
         Some((attenuation, scattered))
     }
 }
-
 
 pub struct Metal {
     albedo: Color,
@@ -47,7 +51,7 @@ impl Metal {
     }
 }
 
-impl Scatter for Metal {
+impl Material for Metal {
             
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflected = r_in.direction().reflect(&rec.get_normal()).unit_vector();
@@ -75,7 +79,7 @@ impl Dialectric {
     }
 }
 
-impl Scatter for Dialectric {
+impl Material for Dialectric {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         fn reflectence(cosine: f64, ref_idx: f64) -> f64 {
             let r0 = ((1.0-ref_idx) / (1.0+ref_idx)).powi(2);
@@ -103,5 +107,30 @@ impl Scatter for Dialectric {
                             
         let scattered = Ray::new(rec.get_p(), direction, r_in.time());
         Some((Color::new(1,1,1), scattered))
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Box<dyn Texture>,
+}
+
+// todo: clean up these constructors, genericise from rgb
+impl DiffuseLight {
+    pub fn new(a: Box<dyn Texture>) -> DiffuseLight {
+        DiffuseLight { emit: a }
+    }
+
+    pub fn new_from_color(c: Color) -> DiffuseLight {
+        DiffuseLight::new(Box::new(SolidColor::new(c)))
+    }
+
+    pub fn new_from_rgb(r: u32, g: u32, b: u32) -> DiffuseLight {
+        DiffuseLight::new_from_color(Color::new(r, g, b))
+    }
+}
+
+impl Material for DiffuseLight {
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.emit.value(u, v, p)
     }
 }
