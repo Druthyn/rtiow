@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 
 use crate::bvh::aabb::Aabb;
-use crate::materials::Scatter;
+use crate::materials::Material;
 use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;
 use crate::shapes::{Hit, HitRecord};
@@ -12,7 +12,7 @@ pub struct Sphere {
     center0: Point3, center1: Point3,
     time0: f64, time1: f64,
     radius: f64,
-    mat: Arc<dyn Scatter>,
+    mat: Arc<dyn Material>,
     is_static: bool,
 }
 
@@ -60,7 +60,7 @@ impl Hit for Sphere {
 }
 
 impl Sphere {
-    pub fn new_static<T: Into<f64>>(cen: Point3, r: T, mat: Arc<dyn Scatter>) -> Sphere{
+    pub fn new_static<T: Into<f64>>(cen: Point3, r: T, mat: Arc<dyn Material>) -> Sphere{
         Sphere { 
             center0: cen, 
             center1: cen,
@@ -75,7 +75,7 @@ impl Sphere {
     pub fn new_moving<T: Into<f64>>(center0: Point3, 
                                     center1: Point3, 
                                     r: T, 
-                                    mat: Arc<dyn Scatter>, 
+                                    mat: Arc<dyn Material>, 
                                     time0: f64, 
                                     time1: f64) -> Sphere{
  

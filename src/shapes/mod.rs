@@ -1,9 +1,10 @@
 pub mod sphere;
+pub mod rectangles;
 
 
 use std::sync::Arc;
 
-use crate::materials::Scatter;
+use crate::materials::Material;
 use crate::vec3::{Point3, Vec3}; 
 use crate::ray::Ray;
 use crate::bvh::aabb::Aabb;
@@ -11,7 +12,7 @@ use crate::bvh::aabb::Aabb;
 pub struct HitRecord {
     p: Point3,
     normal: Vec3,
-    mat: Arc<dyn Scatter>,
+    mat: Arc<dyn Material>,
     t: f64,
     u: f64,
     v: f64,
@@ -20,7 +21,7 @@ pub struct HitRecord {
 
 impl HitRecord {
 
-    fn new(p: Point3, t: f64, u: f64, v: f64, r: &Ray, outward_normal: &Vec3, mat: Arc<dyn Scatter>) -> Self {
+    fn new(p: Point3, t: f64, u: f64, v: f64, r: &Ray, outward_normal: &Vec3, mat: Arc<dyn Material>) -> Self {
         let front_face = r.direction().dot(outward_normal) < 0.0;
         let normal = if front_face {*outward_normal}else{Vec3::zero()-*outward_normal};
         HitRecord {
@@ -42,7 +43,7 @@ impl HitRecord {
         self.p
     }
 
-    pub fn get_mat(&self) -> Arc<dyn Scatter> {
+    pub fn get_mat(&self) -> Arc<dyn Material> {
         self.mat.clone()
     }
 
