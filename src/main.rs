@@ -9,11 +9,13 @@ pub mod texture;
 use std::sync::Arc;
 
 use bvh::BVH;
+use materials::DiffuseLight;
 use rayon::prelude::*;
 use indicatif::{ParallelProgressIterator, ProgressStyle};
 use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
+use shapes::rectangles::XyRect;
 use texture::{SolidColor, Texture};
 use texture::checker_texture::CheckerTexture;
 use texture::noise_texture::NoiseTexture;
@@ -48,7 +50,7 @@ enum DebugSaving {
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
 #[allow(clippy::borrowed_box)]
-fn ray_color(r: &Ray, world: &Box<dyn Hit>, depth: i32) -> Color { 
+fn ray_color(r: &Ray, background: &Color, world: &Box<dyn Hit>, depth: i32) -> Color { 
 
     if depth <= 0 {
         return Color::zero()
@@ -58,15 +60,14 @@ fn ray_color(r: &Ray, world: &Box<dyn Hit>, depth: i32) -> Color {
 
     if let Some(shape) = res {
         let scatter = shape.get_mat().scatter(r, &shape);
+        let emitted = shape.get_mat().emitted(shape.u(), shape.v(), shape.p());
         if let Some((att, scat)) = scatter {
-            return att * ray_color(&scat, world, depth-1)
+            return emitted + att * ray_color(&scat, background, world, depth-1)
         }
-        return Color::new(0,0,0);
+        return emitted
+    } else {
+        return *background
     }
-
-    let unit_direction: Vec3 = r.direction().unit_vector();
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * Color::new(1, 1, 1) + t*Color::new(0.5, 0.7, 1.0)
 }
 
 #[allow(dead_code)]
@@ -146,7 +147,6 @@ fn two_perlin_spheres() -> Box<dyn Hit> {
     Box::new(objects)    
 }
 
-
 #[allow(dead_code)]
 fn earth() -> Box<dyn Hit> {
     let earth_texture: Box<dyn Texture> = match ImageTexture::new("earthmap.jpg".to_string()) {
@@ -160,14 +160,55 @@ fn earth() -> Box<dyn Hit> {
     Box::new(globe)
 }
 
+#[allow(dead_code)]
+fn simple_light() -> Box<dyn Hit> {
+    let mut objects = HittableList::default();
+
+    let pertext = NoiseTexture::new(4.0);
+    let pertext2 = NoiseTexture::new(4.0);
+
+    let sphere1 = Sphere::new_static(Point3::new(0, -1000, 0), 1000, Arc::new(Lambertian::new(Box::new(pertext))));
+    let sphere2 = Sphere::new_static(Point3::new(0, 2, 0), 2, Arc::new(Lambertian::new(Box::new(pertext2))));
+
+    objects.push(sphere1);
+    objects.push(sphere2);
+
+    let difflight = Arc::new(DiffuseLight::new_from_rgb(4,4,4));
+    let rect = XyRect::new((3.0,5.0), (1.0,3.0), -2.0, difflight);
+
+    objects.push(rect);
+    
+    Box::new(BVH::new(vec![Box::new(objects)], 0.0, 1.0))    
+}
+
 fn main() {
     let world: Box<dyn Hit>;
     let cam: Camera;
+    let background: Color;
 
-    const SCENE: i32 = 4;
+    const SCENE: i32 = 5;
     match SCENE {
+        1 => {
+            world = random_scene();
+            background = Color::new(0.7, 0.8, 1.0);
+
+            let look_from = Point3::new(13, 2, 3);
+            let look_at = Point3::new(0, 0, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                20.0, 
+                ASPECT_RATIO,
+                0.1,
+                10.0,
+                TIME0,
+                TIME1,
+            );
+        },
         2 => {
             world = two_spheres();
+            background = Color::new(0.7, 0.8, 1.0);
 
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
@@ -185,6 +226,7 @@ fn main() {
         },
         3 => {
             world = two_perlin_spheres();
+            background = Color::new(0.7, 0.8, 1.0);
 
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
@@ -202,6 +244,8 @@ fn main() {
         },
         4 => {
             world = earth();
+            background = Color::new(0.7, 0.8, 1.0);
+
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
             cam = Camera::new(
@@ -216,23 +260,42 @@ fn main() {
                 TIME1,
             );
         }
-        _ => {
-            world = random_scene();
-
-            let look_from = Point3::new(13, 2, 3);
-            let look_at = Point3::new(0, 0, 0);
+        5 => {
+            world = simple_light();
+            background = Color::new(0, 0, 0);
+            let look_from = Point3::new(26,3,6);
+            let look_at = Point3::new(0,2,0);
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
                 20.0, 
                 ASPECT_RATIO,
-                0.1,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            )
+
+        }
+        _ => {
+            background = Color::new(0.7, 0.8, 1.0);
+            world = Box::<HittableList>::default();
+            let look_from = Point3::new(0, 0, 0);
+            let look_at = Point3::new(0, 1, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                20.0, 
+                ASPECT_RATIO,
+                0.0,
                 10.0,
                 TIME0,
                 TIME1,
             );
-        },
+        }
+        ,
     }
     let style = ProgressStyle::with_template("[Elapsed: {elapsed_precise}] Eta: {eta_precise} {bar:40.cyan/blue} {pos:>7}/{len:7}").unwrap();
 //    Rendering
@@ -249,7 +312,7 @@ fn main() {
                         let v = (j as f64 + rng.gen::<f64>()) / ((IMAGE_HEIGHT-1) as f64);
 
                         let r = cam.get_ray(u, v);
-                        pixel_color = pixel_color + ray_color(&r, &world, MAX_DEPTH);
+                        pixel_color = pixel_color + ray_color(&r, &background, &world, MAX_DEPTH);
                     }
                     pixel_color.to_rgba(255, SAMPLES_PER_PIXEL)
                 })
