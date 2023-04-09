@@ -6,7 +6,7 @@ use crate::{materials::Material, bvh::aabb::Aabb, ray::Ray, vec3::{Point3, Vec3}
 use super::{Hit, HitRecord};
 
 macro_rules! build_rect_struct {
-    ($d1:tt, $d2:tt plane. Normal in $d3:tt) => {
+    ($d1:tt, $d2:tt plane. Normal in $d3:tt, $norm_vec:tt) => {
         paste! {
             pub struct [<$d1:upper $d2 Rect>] {
                 mp: Arc<dyn Material>,
@@ -39,10 +39,17 @@ macro_rules! build_rect_struct {
             
                     let u = ($d1-self.[<$d1 s>].0)/(self.[<$d1 s>].1-self.[<$d1 s>].0);
                     let v = ($d2-self.[<$d2 s>].0)/(self.[<$d2 s>].1-self.[<$d2 s>].0);
-                    let outward_normal = &Vec3::new(0,0,1);
+                    
+                    
+                    let outward_normal = &match $norm_vec {
+                        "x" => Vec3::new(1,0,0),
+                        "y" => Vec3::new(0,1,0),
+                        "z" => Vec3::new(0,0,1),
+                        _ => Vec3::new(0,0,0),
+                    };
                     let p = r.at(t);
             
-                    Some(HitRecord::new(p, t, u, v, r, outward_normal, self.mp.clone()))
+                    Some(HitRecord::new(p, t, u, v, r, &outward_normal, self.mp.clone()))
                 }
             
                 fn bounding_box(&self, _time0: f64, _time1: f64) -> Option<Aabb> {
@@ -56,6 +63,6 @@ macro_rules! build_rect_struct {
     };
 }
 
-build_rect_struct!(x, y plane. Normal in z);
-build_rect_struct!(x, z plane. Normal in y);
-build_rect_struct!(y, z plane. Normal in x);
+build_rect_struct!(x, y plane. Normal in z, "z");
+build_rect_struct!(x, z plane. Normal in y, "y");
+build_rect_struct!(y, z plane. Normal in x, "x");
