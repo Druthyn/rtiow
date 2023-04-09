@@ -1,5 +1,6 @@
 pub mod sphere;
 pub mod rectangles;
+pub mod cube;
 
 
 use std::sync::Arc;

@@ -1,6 +1,6 @@
 use rand::{thread_rng, Rng};
 
-use crate::{ray::Ray, vec3::{Color, Vec3, Point3}, shapes::HitRecord, texture::SolidColor};
+use crate::{ray::Ray, vec3::{Color, Vec3, Point3}, hittables::HitRecord, texture::SolidColor};
 use crate::texture::Texture;
 
 pub trait Material :Send + Sync{

@@ -1,6 +1,6 @@
 pub mod ray;
 pub mod vec3;
-pub mod shapes;
+pub mod hittables;
 pub mod camera;
 pub mod materials;
 pub mod bvh;
@@ -15,7 +15,7 @@ use indicatif::{ParallelProgressIterator, ProgressStyle};
 use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
-use shapes::rectangles::{XyRect, YzRect, XzRect};
+use hittables::rectangles::{XyRect, YzRect, XzRect};
 use texture::{SolidColor, Texture};
 use texture::checker_texture::CheckerTexture;
 use texture::noise_texture::NoiseTexture;
@@ -27,7 +27,7 @@ use texture::image_texture::ImageTexture;
 use crate::materials::{Lambertian, Metal, Dialectric};
 use crate::vec3::{Point3, Vec3, Color};
 use crate::ray::Ray;
-use crate::shapes::{Hit, HittableList, sphere::Sphere};
+use crate::hittables::{Hit, HittableList, sphere::Sphere};
 use crate::camera::Camera;
 
 
