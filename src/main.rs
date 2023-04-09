@@ -15,7 +15,7 @@ use indicatif::{ParallelProgressIterator, ProgressStyle};
 use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
-use shapes::rectangles::XyRect;
+use shapes::rectangles::{XyRect, YzRect, XzRect};
 use texture::{SolidColor, Texture};
 use texture::checker_texture::CheckerTexture;
 use texture::noise_texture::NoiseTexture;
@@ -32,10 +32,10 @@ use crate::camera::Camera;
 
 
 
-const ASPECT_RATIO: f64 = 16.0/9.0;
-const IMAGE_WIDTH: u32 = 400;
+const ASPECT_RATIO: f64 = 1.0;
+const IMAGE_WIDTH: u32 = 600;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u64 = 100;
+const SAMPLES_PER_PIXEL: u64 = 200;
 const MAX_DEPTH: i32 = 50;
 const TIME0: f64 = 0.0;
 const TIME1: f64 = 1.0;
@@ -64,9 +64,9 @@ fn ray_color(r: &Ray, background: &Color, world: &Box<dyn Hit>, depth: i32) -> C
         if let Some((att, scat)) = scatter {
             return emitted + att * ray_color(&scat, background, world, depth-1)
         }
-        return emitted
+        emitted
     } else {
-        return *background
+        *background
     }
 }
 
@@ -181,12 +181,31 @@ fn simple_light() -> Box<dyn Hit> {
     Box::new(BVH::new(vec![Box::new(objects)], 0.0, 1.0))    
 }
 
+#[allow(dead_code)]
+fn cornell_box() -> Box<dyn Hit> {
+    let mut objects = HittableList::default();
+    
+    let red = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.65, 0.05, 0.05))));
+    let white = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73))));
+    let green = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.12, 0.45, 0.15))));
+    let light = Arc::new(DiffuseLight::new_from_rgb(15, 15, 15));
+
+    objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, green));
+    objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, red));
+    objects.push(XzRect::new((213.0, 343.0), (227.0, 332.0), 554.0, light));
+    objects.push(XzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, white.clone()));
+    objects.push(XzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
+    objects.push(XyRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white));
+    
+    Box::new(objects)
+}
+
 fn main() {
     let world: Box<dyn Hit>;
     let cam: Camera;
     let background: Color;
 
-    const SCENE: i32 = 5;
+    const SCENE: i32 = 6;
     match SCENE {
         1 => {
             world = random_scene();
@@ -259,7 +278,7 @@ fn main() {
                 TIME0,
                 TIME1,
             );
-        }
+        },
         5 => {
             world = simple_light();
             background = Color::new(0, 0, 0);
@@ -277,7 +296,24 @@ fn main() {
                 TIME1,
             )
 
-        }
+        },
+        6 => {
+            world = cornell_box();
+            background = Color::new(0, 0, 0);
+            let look_from = Point3::new(278, 278, -800);
+            let look_at = Point3::new(278, 278, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                40.0, 
+                ASPECT_RATIO,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            )
+        },
         _ => {
             background = Color::new(0.7, 0.8, 1.0);
             world = Box::<HittableList>::default();
