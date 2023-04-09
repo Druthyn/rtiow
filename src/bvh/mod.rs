@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 
 use crate::ray::Ray;
-use crate::shapes::Hit;
-use crate::shapes::HitRecord;
+use crate::hittables::Hit;
+use crate::hittables::HitRecord;
 
 use self::aabb::Aabb;
 

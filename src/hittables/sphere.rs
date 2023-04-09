@@ -5,7 +5,7 @@ use crate::bvh::aabb::Aabb;
 use crate::materials::Material;
 use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;
-use crate::shapes::{Hit, HitRecord};
+use crate::hittables::{Hit, HitRecord};
 
 
 pub struct Sphere {
