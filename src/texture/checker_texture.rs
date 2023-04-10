@@ -1,14 +1,15 @@
 use crate::vec3::Color;
 use super::{Texture, SolidColor};
 
+#[derive(Clone)]
 pub struct CheckerTexture {
-    odd: Box<dyn Texture>,
-    even: Box<dyn Texture>,
+    odd: SolidColor,
+    even: SolidColor,
 }
 
 impl CheckerTexture {
     pub fn new(c1: Color, c2: Color) -> CheckerTexture {
-        CheckerTexture { even: Box::new(SolidColor::new(c1)), odd: Box::new(SolidColor::new(c2)) }
+        CheckerTexture { even: SolidColor::new(c1), odd: SolidColor::new(c2) }
     }
 }
 
