@@ -2,7 +2,7 @@ use std::{f64::INFINITY, sync::Arc};
 
 use rand::{Rng, thread_rng};
 
-use crate::{materials::{Material, Isotropic}, texture::Texture, vec3::{Color, Vec3}, bvh::aabb::Aabb, ray::Ray};
+use crate::{materials::{Material, Isotropic}, texture::Texture, vec3::{Color, Vec3}, hittables::bvh::aabb::Aabb, ray::Ray};
 
 use super::{Hit, HitRecord};
 

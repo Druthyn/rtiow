@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use paste::paste;
 
-use crate::{materials::Material, bvh::aabb::Aabb, ray::Ray, vec3::{Point3, Vec3}};
+use crate::{materials::Material, ray::Ray, vec3::{Point3, Vec3}};
 
-use super::{Hit, HitRecord};
+use super::{bvh::aabb::Aabb, Hit, HitRecord};
 
 macro_rules! build_rect_struct {
     ($d1:tt, $d2:tt plane. Normal in $d3:tt, $norm_vec:tt) => {

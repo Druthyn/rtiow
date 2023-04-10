@@ -3,12 +3,11 @@ pub mod vec3;
 pub mod hittables;
 pub mod camera;
 pub mod materials;
-pub mod bvh;
 pub mod texture;
 
 use std::sync::Arc;
 
-use bvh::BVH;
+use hittables::bvh::BVH;
 use hittables::constant_medium::ConstantMedium;
 use hittables::cube::Cube;
 use hittables::transformations::{Translate, RotateY};
