@@ -18,7 +18,7 @@ use image::ImageBuffer;
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
 use hittables::rectangles::{XyRect, YzRect, XzRect};
-use texture::{SolidColor, Texture};
+use texture::SolidColor;
 use texture::checker_texture::CheckerTexture;
 use texture::noise_texture::NoiseTexture;
 use texture::image_texture::ImageTexture;
@@ -37,7 +37,7 @@ use crate::camera::Camera;
 const ASPECT_RATIO: f64 = 1.0;
 const IMAGE_WIDTH: u32 = 800;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u64 = 10000;
+const SAMPLES_PER_PIXEL: u64 = 10;
 const MAX_DEPTH: i32 = 50;
 const TIME0: f64 = 0.0;
 const TIME1: f64 = 1.0;
@@ -79,7 +79,7 @@ fn random_scene() -> Box<dyn Hit> {
     let mut world = HittableList::default();
 
 
-    let checker = Arc::new(Lambertian::new(Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)))));
+    let checker = Arc::new(Lambertian::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9))));
     world.push(Sphere::new_static(Point3::new(0, -1000, 0), 1000, checker));
 
     for a in -11..=11 {
@@ -91,7 +91,7 @@ fn random_scene() -> Box<dyn Hit> {
             if (center - Point3::new(4, 0.2, 0)).length() > 0.9 {
                 let sphere: Sphere = match rng.gen() {
                     x if (0.0..=0.8).contains(&x) => {
-                        let albedo = Box::new(SolidColor::new(Color::random() * Color::random()));
+                        let albedo = SolidColor::new(Color::random() * Color::random());
                         let center2 = center + Point3::new(0, rng.gen::<f64>()/2.0, 0);
                         Sphere::new_moving(center, center2, 0.2, Arc::new(Lambertian::new(albedo)), 0.0, 1.0)
                     }
@@ -112,7 +112,7 @@ fn random_scene() -> Box<dyn Hit> {
     let material1 = Arc::new(Dialectric::new(1.5));
     world.push(Sphere::new_static(Point3::new(0, 1, 0), 1.0, material1));
 
-    let material2 = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.4, 0.2, 0.1))));
+    let material2 = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.4, 0.2, 0.1)));
     world.push(Sphere::new_static(Point3::new(-4, 1, 0), 1.0, material2));
 
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
@@ -125,8 +125,8 @@ fn random_scene() -> Box<dyn Hit> {
 fn two_spheres() -> Box<dyn Hit> {
     let mut objects = HittableList::default();
 
-    let checker1 = Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)));
-    let checker2 = Box::new(CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)));
+    let checker1 = CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9));
+    let checker2 = CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9));
 
     objects.push(Sphere::new_static(Point3::new(0,-10, 0), 10, Arc::new(Lambertian::new(checker1))));
     objects.push(Sphere::new_static(Point3::new(0,10, 0), 10, Arc::new(Lambertian::new(checker2))));
@@ -139,8 +139,8 @@ fn two_perlin_spheres() -> Box<dyn Hit> {
 
     let mut objects = HittableList::default();
 
-    let pertext = Box::new(NoiseTexture::new(4.0));
-    let pertext1 = Box::new(NoiseTexture::new(4.0));
+    let pertext = NoiseTexture::new(4.0);
+    let pertext1 = NoiseTexture::new(4.0);
     
 
     objects.push(Sphere::new_static(Point3::new(0,-1000, 0), 1000, Arc::new(Lambertian::new(pertext))));
@@ -151,10 +151,7 @@ fn two_perlin_spheres() -> Box<dyn Hit> {
 
 #[allow(dead_code)]
 fn earth() -> Box<dyn Hit> {
-    let earth_texture: Box<dyn Texture> = match ImageTexture::new("earthmap.jpg".to_string()) {
-        Ok(x) => Box::new(x),
-        Err(_) => Box::new(SolidColor::new_from_rgb(0.0, 1.0, 1.0))
-    };
+    let earth_texture = ImageTexture::new("earthmsdap.jpg".to_string());
         
     let earth_surface = Arc::new(Lambertian::new(earth_texture));
 
@@ -169,13 +166,13 @@ fn simple_light() -> Box<dyn Hit> {
     let pertext = NoiseTexture::new(4.0);
     let pertext2 = NoiseTexture::new(4.0);
 
-    let sphere1 = Sphere::new_static(Point3::new(0, -1000, 0), 1000, Arc::new(Lambertian::new(Box::new(pertext))));
-    let sphere2 = Sphere::new_static(Point3::new(0, 2, 0), 2, Arc::new(Lambertian::new(Box::new(pertext2))));
+    let sphere1 = Sphere::new_static(Point3::new(0, -1000, 0), 1000, Arc::new(Lambertian::new(pertext)));
+    let sphere2 = Sphere::new_static(Point3::new(0, 2, 0), 2, Arc::new(Lambertian::new(pertext2)));
 
     objects.push(sphere1);
     objects.push(sphere2);
 
-    let difflight = Arc::new(DiffuseLight::new_from_rgb(4,4,4));
+    let difflight = Arc::new(DiffuseLight::<SolidColor>::new_from_rgb(4,4,4));
     let rect = XyRect::new((3.0,5.0), (1.0,3.0), -2.0, difflight);
 
     objects.push(rect);
@@ -187,10 +184,10 @@ fn simple_light() -> Box<dyn Hit> {
 fn cornell_box() -> Box<dyn Hit> {
     let mut objects = HittableList::default();
     
-    let red = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.65, 0.05, 0.05))));
-    let white = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73))));
-    let green = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.12, 0.45, 0.15))));
-    let light = Arc::new(DiffuseLight::new_from_rgb(15, 15, 15));
+    let red = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::<SolidColor>::new_from_rgb(15, 15, 15));
 
     objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, green));
     objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, red));
@@ -216,10 +213,10 @@ fn cornell_box() -> Box<dyn Hit> {
 fn cornell_smoke() -> Box<dyn Hit> {
     let mut objects = HittableList::default();
     
-    let red = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.65, 0.05, 0.05))));
-    let white = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73))));
-    let green = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.12, 0.45, 0.15))));
-    let light = Arc::new(DiffuseLight::new_from_rgb(7, 7, 7));
+    let red = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::<SolidColor>::new_from_rgb(7, 7, 7));
 
     objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, green));
     objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, red));
@@ -245,7 +242,7 @@ fn cornell_smoke() -> Box<dyn Hit> {
 fn final_scene_book2() -> Box<dyn Hit> {
     let mut boxes1 = HittableList::default();
 
-    let ground = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.48, 0.83, 0.53))));
+    let ground = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.48, 0.83, 0.53)));
 
     let boxes_per_side = 20;
 
@@ -270,12 +267,12 @@ fn final_scene_book2() -> Box<dyn Hit> {
     let mut objects = HittableList::default();
     objects.push(BVH::new(boxes1.list, 0.0, 1.0));
 
-    let light = Arc::new(DiffuseLight::new_from_rgb(7, 7, 7));
+    let light = Arc::new(DiffuseLight::<SolidColor>::new_from_rgb(7, 7, 7));
     objects.push(XzRect::new((123.0, 423.0), (147.0, 412.0), 554.0, light));
 
     let center1 = Point3::new(400, 400, 200);
     let center2 = center1+ Vec3::new(30, 0, 0);
-    let moving_sphere_material = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.7, 0.3, 0.1))));
+    let moving_sphere_material = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.7, 0.3, 0.1)));
     objects.push(Sphere::new_moving(center1, center2, 50, moving_sphere_material, 0.0, 1.0));
 
     objects.push(Sphere::new_static(Point3::new(260, 150, 45), 50, Arc::new(Dialectric::new(1.5))));
@@ -288,13 +285,13 @@ fn final_scene_book2() -> Box<dyn Hit> {
     let boundary = Sphere::new_static(Point3::new(0, 0, 0), 5000, Arc::new(Dialectric::new(1.5)));
     objects.push(ConstantMedium::new_from_color(Box::new(boundary), 0.0001, Color::new(1, 1, 1)));
 
-    let emat = Arc::new(Lambertian::new(Box::new(ImageTexture::new("earthmap.jpg".to_string()).unwrap())));
+    let emat = Arc::new(Lambertian::new(ImageTexture::new("earthmap.jpg".to_string())));
     objects.push(Sphere::new_static(Point3::new(400, 200, 400), 100, emat));
-    let pertext = Box::new(NoiseTexture::new(0.1));
+    let pertext = NoiseTexture::new(0.1);
     objects.push(Sphere::new_static(Point3::new(220, 280, 300), 80, Arc::new(Lambertian::new(pertext))));
 
     let mut boxes2 = HittableList::default();
-    let white = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73))));
+    let white = Arc::new(Lambertian::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73)));
     let ns = 1000;
     for _ in 0..ns {
         boxes2.push(Sphere::new_static(Point3::random_in_range(0, 165), 10, white.clone()))
@@ -317,7 +314,7 @@ fn main() {
     let cam: Camera;
     let background: Color;
 
-    const SCENE: i32 = 8;
+    const SCENE: i32 = 4;
     match SCENE {
         1 => {
             world = random_scene();
