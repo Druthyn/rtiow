@@ -6,6 +6,7 @@ use crate::vec3::{Point3, Vec3};
 
 const POINTCOUNT: u32 = 256;
 
+#[derive(Clone)]
 pub struct Perlin {
     ranvec: Vec<Vec3>,
     perm_x: Vec<i32>,

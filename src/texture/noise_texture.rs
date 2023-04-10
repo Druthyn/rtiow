@@ -2,7 +2,7 @@ use crate::vec3::{Color, Point3};
 
 use super::{perlin::Perlin, Texture};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct NoiseTexture {
     noise: Perlin,
     scale: f64,
