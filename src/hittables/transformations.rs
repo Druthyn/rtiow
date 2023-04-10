@@ -1,6 +1,7 @@
 use std::f64::INFINITY;
 
-use crate::{vec3::{Vec3, Point3}, ray::Ray, bvh::aabb::Aabb};
+use crate::{vec3::{Vec3, Point3}, ray::Ray};
+use crate::hittables::bvh::aabb::Aabb;
 
 use super::{Hit, HitRecord};
 

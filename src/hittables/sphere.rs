@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 
-use crate::bvh::aabb::Aabb;
+use crate::hittables::bvh::aabb::Aabb;
 use crate::materials::Material;
 use crate::vec3::{Point3, Vec3};
 use crate::ray::Ray;

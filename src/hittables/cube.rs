@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{vec3::Point3, materials::Material, bvh::aabb::Aabb, ray::Ray};
+use crate::{vec3::Point3, materials::Material, hittables::bvh::aabb::Aabb, ray::Ray};
 
 use super::{HittableList, Hit, rectangles::{XyRect, XzRect, YzRect}, HitRecord};
 

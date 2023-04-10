@@ -3,6 +3,7 @@ pub mod rectangles;
 pub mod cube;
 pub mod transformations;
 pub mod constant_medium;
+pub mod bvh;
 
 
 use std::sync::Arc;
@@ -10,7 +11,7 @@ use std::sync::Arc;
 use crate::materials::Material;
 use crate::vec3::{Point3, Vec3}; 
 use crate::ray::Ray;
-use crate::bvh::aabb::Aabb;
+use crate::hittables::bvh::aabb::Aabb;
 
 pub struct HitRecord {
     p: Point3,
