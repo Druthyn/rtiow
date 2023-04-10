@@ -2,7 +2,7 @@ use std::{f64::INFINITY, sync::Arc};
 
 use rand::{Rng, thread_rng};
 
-use crate::{materials::{Material, Isotropic}, texture::Texture, vec3::{Color, Vec3}, hittables::bvh::aabb::Aabb, ray::Ray};
+use crate::{materials::{Material, Isotropic}, texture::{Texture, SolidColor}, vec3::{Color, Vec3}, hittables::bvh::aabb::Aabb, ray::Ray};
 
 use super::{Hit, HitRecord};
 
@@ -13,12 +13,12 @@ pub struct ConstantMedium {
 }
 
 impl ConstantMedium {
-    pub fn new_from_texture(b: Box<dyn Hit>, d: f64, a: Box<dyn Texture>) -> ConstantMedium {
+    pub fn new_from_texture<T: Texture + 'static>(b: Box<dyn Hit>, d: f64, a: T) -> ConstantMedium {
         ConstantMedium { boundary: b, phase_function: Arc::new(Isotropic::new_from_texture(a)), neg_inv_density: -1.0/d }
     }
 
     pub fn new_from_color(b: Box<dyn Hit>, d: f64, c: Color) -> ConstantMedium {
-        ConstantMedium { boundary: b, phase_function: Arc::new(Isotropic::new_from_color(c)), neg_inv_density: -1.0/d }
+        ConstantMedium { boundary: b, phase_function: Arc::new(Isotropic::<SolidColor>::new_from_color(c)), neg_inv_density: -1.0/d }
     }
 }
 
