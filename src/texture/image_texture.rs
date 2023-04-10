@@ -1,27 +1,34 @@
 use std::{result::{Result}, convert::Into};
 
-use image::{self, DynamicImage, io::Reader, ImageError, GenericImageView};
+use image::{self, DynamicImage, io::Reader, ImageError, GenericImageView, ImageBuffer, Rgb};
 
 use crate::vec3::{Color, Vec3};
 
 use super::Texture;
 
+#[derive(Clone)]
 pub struct ImageTexture {
     image: DynamicImage,
 }
 
 impl ImageTexture {
-    pub fn new(filename: String) -> Result<ImageTexture, ImageError> {
+    pub fn new(filename: String) -> ImageTexture {
         fn load_image(filename: String) -> Result<DynamicImage, ImageError> {
             Reader::open(filename)?.with_guessed_format()?.decode()
         } 
-        let image = match load_image(filename) {
-            Ok(x) => Some(x),
-            Err(y) => return Err(y)
-        };
-        let image_data = image.unwrap();
-        Ok(ImageTexture {image: image_data})
+        match load_image(filename) {
+            Ok(image) => ImageTexture{image},
+            Err(_) => ImageTexture::default()
+        }
     }
+
+    fn default() -> Self {
+        let pixel = Rgb::from([0, 255, 255]);
+        let image = ImageBuffer::from_pixel(1, 1, pixel);
+        ImageTexture{ image: DynamicImage::ImageRgb8(image)}
+    }
+
+
 }
 
 impl Texture for ImageTexture {
