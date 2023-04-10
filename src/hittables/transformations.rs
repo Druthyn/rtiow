@@ -40,15 +40,15 @@ impl<H : Hit> Hit for Translate<H> {
     }
 }
 
-pub struct RotateY {
-    ptr: Box<dyn Hit>,
+pub struct RotateY<H: Hit> {
+    ptr: H,
     sin_theta: f64,
     cos_theta: f64,
     bbox: Option<Aabb>,
 }
 
-impl RotateY {
-    pub fn new(p: Box<dyn Hit>, angle: f64) -> RotateY {
+impl<H: Hit> RotateY<H> {
+    pub fn new(p: H, angle: f64) -> RotateY<H> {
         let radians = angle.to_radians();
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
@@ -81,7 +81,7 @@ impl RotateY {
     }
 }
 
-impl Hit for RotateY {
+impl<H: Hit> Hit for RotateY<H> {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
 
         macro_rules! rot_hit_helper {
