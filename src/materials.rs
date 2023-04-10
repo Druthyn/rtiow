@@ -12,19 +12,19 @@ pub trait Material :Send + Sync{
     }
 }
 
-pub struct Lambertian {
-    albedo: Box<dyn Texture>,
+pub struct Lambertian<T: Texture> {
+    albedo: T,
 }
 
-impl Lambertian {
-    pub fn new(a: Box<dyn Texture>) -> Self {
+impl<T: Texture> Lambertian<T> {
+    pub fn new(a: T) -> Self {
         Lambertian {
             albedo: a,
         }
     }
 }
 
-impl Material for Lambertian {            
+impl<T: Texture> Material for Lambertian<T> {            
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = rec.normal() + Vec3::random_unit_vector();
 
@@ -110,46 +110,46 @@ impl Material for Dialectric {
     }
 }
 
-pub struct DiffuseLight {
-    emit: Box<dyn Texture>,
+pub struct DiffuseLight<T: Texture> {
+    emit: T,
 }
 
 // todo: clean up these constructors, genericise from rgb
-impl DiffuseLight {
-    pub fn new(a: Box<dyn Texture>) -> DiffuseLight {
+impl<T: Texture> DiffuseLight<T> {
+    pub fn new(a: T) -> Self {
         DiffuseLight { emit: a }
     }
 
-    pub fn new_from_color(c: Color) -> DiffuseLight {
-        DiffuseLight::new(Box::new(SolidColor::new(c)))
+    pub fn new_from_color(c: Color) -> DiffuseLight<SolidColor> {
+        DiffuseLight::new(SolidColor::new(c))
     }
 
-    pub fn new_from_rgb(r: u32, g: u32, b: u32) -> DiffuseLight {
-        DiffuseLight::new_from_color(Color::new(r, g, b))
+    pub fn new_from_rgb(r: u32, g: u32, b: u32) -> DiffuseLight<SolidColor> {
+        DiffuseLight::new(SolidColor::new(Color::new(r, g, b)))
     }
 }
 
-impl Material for DiffuseLight {
+impl<T: Texture> Material for DiffuseLight<T> {
     fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
         self.emit.value(u, v, p)
     }
 }
 
-pub struct Isotropic {
-    albedo: Box<dyn Texture>,
+pub struct Isotropic<T: Texture> {
+    albedo: T,
 }
 
-impl Isotropic {
-    pub fn new_from_texture(a: Box<dyn Texture>) -> Isotropic {
+impl<T: Texture> Isotropic<T> {
+    pub fn new_from_texture(a: T) -> Isotropic<T> {
         Isotropic {albedo: a}
     }
 
-    pub fn new_from_color(c: Color) -> Isotropic {
-        Isotropic::new_from_texture(Box::new(SolidColor::new(c)))
+    pub fn new_from_color(c: Color) -> Isotropic<SolidColor> {
+        Isotropic::new_from_texture(SolidColor::new(c))
     }
 }
 
-impl Material for Isotropic {
+impl<T: Texture> Material for Isotropic<T> {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let scattered = Ray::new(rec.p(), Vec3::random_in_unit_sphere(), r_in.time());
         let attenuation = self.albedo.value(rec.u(), rec.v(), &rec.p());
