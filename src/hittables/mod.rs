@@ -1,6 +1,8 @@
 pub mod sphere;
 pub mod rectangles;
 pub mod cube;
+pub mod transformations;
+pub mod constant_medium;
 
 
 use std::sync::Arc;
@@ -36,24 +38,25 @@ impl HitRecord {
         }
     }
 
-    pub fn get_normal(&self) -> Vec3 {
+    pub fn normal(&self) -> Vec3 {
         self.normal
-    }
-
-    pub fn get_p(&self) -> Point3 {
-        self.p
     }
 
     pub fn get_mat(&self) -> Arc<dyn Material> {
         self.mat.clone()
     }
 
+    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: &Vec3) {
+        self.front_face = r.direction().dot(outward_normal) < 0.0;
+        self.normal = if self.front_face { *outward_normal } else { Vec3::zero() - *outward_normal};
+    }
+
     pub fn t(&self) -> f64 {
         self.t
     }
 
-    pub fn p(&self) -> &Vec3 {
-        &self.p
+    pub fn p(&self) -> Point3 {
+        self.p
     }
 
     pub fn u(&self) -> f64 {
