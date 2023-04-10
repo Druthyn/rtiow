@@ -5,18 +5,18 @@ use crate::hittables::bvh::aabb::Aabb;
 
 use super::{Hit, HitRecord};
 
-pub struct Translate {
-    ptr: Box<dyn Hit>,
+pub struct Translate<H : Hit> {
+    ptr: H,
     offset: Vec3,
 }
 
-impl Translate {
-    pub fn new(ptr: Box<dyn Hit>, offset: Vec3) -> Translate {
+impl<H : Hit> Translate<H> {
+    pub fn new(ptr: H, offset: Vec3) -> Translate<H> {
         Translate { ptr, offset }
     }
 }
 
-impl Hit for Translate {
+impl<H : Hit> Hit for Translate<H> {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let moved_r = Ray::new(r.origin()-self.offset, r.direction(), r.time());
 
