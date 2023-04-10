@@ -9,6 +9,9 @@ pub mod texture;
 use std::sync::Arc;
 
 use bvh::BVH;
+use hittables::constant_medium::ConstantMedium;
+use hittables::cube::Cube;
+use hittables::transformations::{Translate, RotateY};
 use materials::DiffuseLight;
 use rayon::prelude::*;
 use indicatif::{ParallelProgressIterator, ProgressStyle};
@@ -33,9 +36,9 @@ use crate::camera::Camera;
 
 
 const ASPECT_RATIO: f64 = 1.0;
-const IMAGE_WIDTH: u32 = 600;
+const IMAGE_WIDTH: u32 = 800;
 const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u64 = 200;
+const SAMPLES_PER_PIXEL: u64 = 10000;
 const MAX_DEPTH: i32 = 50;
 const TIME0: f64 = 0.0;
 const TIME1: f64 = 1.0;
@@ -60,7 +63,7 @@ fn ray_color(r: &Ray, background: &Color, world: &Box<dyn Hit>, depth: i32) -> C
 
     if let Some(shape) = res {
         let scatter = shape.get_mat().scatter(r, &shape);
-        let emitted = shape.get_mat().emitted(shape.u(), shape.v(), shape.p());
+        let emitted = shape.get_mat().emitted(shape.u(), shape.v(), &shape.p());
         if let Some((att, scat)) = scatter {
             return emitted + att * ray_color(&scat, background, world, depth-1)
         }
@@ -195,17 +198,131 @@ fn cornell_box() -> Box<dyn Hit> {
     objects.push(XzRect::new((213.0, 343.0), (227.0, 332.0), 554.0, light));
     objects.push(XzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, white.clone()));
     objects.push(XzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
-    objects.push(XyRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white));
+    objects.push(XyRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
+
+    let cube1 = Cube::new(Point3::zero(), Point3::new(165, 330, 165), white.clone());
+    let cube1 = RotateY::new(Box::new(cube1), 15.0);
+    let cube1 = Translate::new(Box::new(cube1), Vec3::new(265, 0, 295));
+    objects.push(cube1);
+
+    let cube2 = Cube::new(Point3::zero(), Point3::new(165, 165, 165), white);
+    let cube2 = RotateY::new(Box::new(cube2), -18.0);
+    let cube2 = Translate::new(Box::new(cube2), Vec3::new(130, 0, 65));
+    objects.push(cube2);
     
     Box::new(objects)
 }
+
+#[allow(dead_code)]
+fn cornell_smoke() -> Box<dyn Hit> {
+    let mut objects = HittableList::default();
+    
+    let red = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.65, 0.05, 0.05))));
+    let white = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73))));
+    let green = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.12, 0.45, 0.15))));
+    let light = Arc::new(DiffuseLight::new_from_rgb(7, 7, 7));
+
+    objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, green));
+    objects.push(YzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, red));
+    objects.push(XzRect::new((113.0, 443.0), (127.0, 432.0), 554.0, light));
+    objects.push(XzRect::new((0.0, 555.0), (0.0, 555.0), 0.0, white.clone()));
+    objects.push(XzRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
+    objects.push(XyRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
+
+    let cube1 = Cube::new(Point3::zero(), Point3::new(165, 330, 165), white.clone());
+    let cube1 = RotateY::new(Box::new(cube1), 15.0);
+    let cube1 = Translate::new(Box::new(cube1), Vec3::new(265, 0, 295));
+    objects.push(ConstantMedium::new_from_color(Box::new(cube1), 0.01, Color::new(0,0,0)));
+
+    let cube2 = Cube::new(Point3::zero(), Point3::new(165, 165, 165), white);
+    let cube2 = RotateY::new(Box::new(cube2), -18.0);
+    let cube2 = Translate::new(Box::new(cube2), Vec3::new(130, 0, 65));
+    objects.push(ConstantMedium::new_from_color(Box::new(cube2), 0.01, Color::new(1,1,1)));
+    
+    Box::new(objects)
+}
+
+#[allow(dead_code)]
+fn final_scene_book2() -> Box<dyn Hit> {
+    let mut boxes1 = HittableList::default();
+
+    let ground = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.48, 0.83, 0.53))));
+
+    let boxes_per_side = 20;
+
+    let mut rng = thread_rng();
+
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+
+            let x0 = -1000.0 + i as f64 * w;
+            let z0 = -1000.0 + j as f64 * w;
+            let y0 = 0.0;
+
+            let x1 = x0 + w;
+            let y1 = rng.gen_range(1.0..=100.0);
+            let z1 = z0 + w;
+
+            boxes1.push(Cube::new(Point3::new(x0, y0, z0), Point3::new(x1, y1, z1), ground.clone()));
+        }
+    }
+
+    let mut objects = HittableList::default();
+    objects.push(BVH::new(boxes1.list, 0.0, 1.0));
+
+    let light = Arc::new(DiffuseLight::new_from_rgb(7, 7, 7));
+    objects.push(XzRect::new((123.0, 423.0), (147.0, 412.0), 554.0, light));
+
+    let center1 = Point3::new(400, 400, 200);
+    let center2 = center1+ Vec3::new(30, 0, 0);
+    let moving_sphere_material = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.7, 0.3, 0.1))));
+    objects.push(Sphere::new_moving(center1, center2, 50, moving_sphere_material, 0.0, 1.0));
+
+    objects.push(Sphere::new_static(Point3::new(260, 150, 45), 50, Arc::new(Dialectric::new(1.5))));
+    objects.push(Sphere::new_static(Point3::new(0, 150, 145), 50, Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 1.0))));
+
+    let boundary = Sphere::new_static(Point3::new(360, 150, 145), 70, Arc::new(Dialectric::new(1.5)));
+    objects.push(boundary);
+    let boundary = Sphere::new_static(Point3::new(360, 150, 145), 70, Arc::new(Dialectric::new(1.5)));
+    objects.push(ConstantMedium::new_from_color(Box::new(boundary), 0.2, Color::new(0.2, 0.4, 0.9)));
+    let boundary = Sphere::new_static(Point3::new(0, 0, 0), 5000, Arc::new(Dialectric::new(1.5)));
+    objects.push(ConstantMedium::new_from_color(Box::new(boundary), 0.0001, Color::new(1, 1, 1)));
+
+    let emat = Arc::new(Lambertian::new(Box::new(ImageTexture::new("earthmap.jpg".to_string()).unwrap())));
+    objects.push(Sphere::new_static(Point3::new(400, 200, 400), 100, emat));
+    let pertext = Box::new(NoiseTexture::new(0.1));
+    objects.push(Sphere::new_static(Point3::new(220, 280, 300), 80, Arc::new(Lambertian::new(pertext))));
+
+    let mut boxes2 = HittableList::default();
+    let white = Arc::new(Lambertian::new(Box::new(SolidColor::new_from_rgb(0.73, 0.73, 0.73))));
+    let ns = 1000;
+    for _ in 0..ns {
+        boxes2.push(Sphere::new_static(Point3::random_in_range(0, 165), 10, white.clone()))
+    }
+
+    objects.push(Translate::new(
+        Box::new(
+            RotateY::new(
+                Box::new(
+                    BVH::new(boxes2.list, 0.0, 1.0)
+                ), 
+                15.0
+            )
+        ),
+        Vec3::new(-100, 270, 395)
+    ));
+
+    Box::new(objects)
+}
+
 
 fn main() {
     let world: Box<dyn Hit>;
     let cam: Camera;
     let background: Color;
 
-    const SCENE: i32 = 6;
+    const SCENE: i32 = 8;
     match SCENE {
         1 => {
             world = random_scene();
@@ -301,6 +418,40 @@ fn main() {
             world = cornell_box();
             background = Color::new(0, 0, 0);
             let look_from = Point3::new(278, 278, -800);
+            let look_at = Point3::new(278, 278, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                40.0, 
+                ASPECT_RATIO,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            )
+        },
+        7 => {
+            world = cornell_smoke();
+            background = Color::new(0, 0, 0);
+            let look_from = Point3::new(278, 278, -800);
+            let look_at = Point3::new(278, 278, 0);
+            cam = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0, 1, 0),
+                40.0, 
+                ASPECT_RATIO,
+                0.0,
+                10.0,
+                TIME0,
+                TIME1,
+            )
+        },
+        8 => {
+            world = final_scene_book2();
+            background = Color::new(0, 0, 0);
+            let look_from = Point3::new(478, 278, -600);
             let look_at = Point3::new(278, 278, 0);
             cam = Camera::new(
                 look_from,
