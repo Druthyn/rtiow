@@ -1,4 +1,4 @@
-use std::{ops::{Add, Sub, Mul, Div, Index}, fmt::Display};
+use std::{ops::{Add, Sub, Mul, Div, Index, IndexMut}, fmt::Display};
 use rand::{thread_rng, Rng};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -139,6 +139,17 @@ impl Index<usize> for Vec3 {
             0 => &self.x,
             1 => &self.y,
             2 => &self.z,
+            _ => panic!("Index {} out of bounds", index),
+        }
+    }
+}
+
+impl IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
             _ => panic!("Index {} out of bounds", index),
         }
     }
