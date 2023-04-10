@@ -5,9 +5,11 @@ mod perlin;
 
 use crate::vec3::{Point3, Color};
 
-pub trait Texture: Send + Sync {
+pub trait Texture: Send + Sync + Clone{
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
+
+#[derive(Clone, Copy)]
 pub struct SolidColor {
     color_value: Color,
 }
