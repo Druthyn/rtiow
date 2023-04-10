@@ -200,12 +200,12 @@ fn cornell_box() -> Box<dyn Hit> {
     objects.push(XyRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
 
     let cube1 = Cube::new(Point3::zero(), Point3::new(165, 330, 165), white.clone());
-    let cube1 = RotateY::new(Box::new(cube1), 15.0);
+    let cube1 = RotateY::new(cube1, 15.0);
     let cube1 = Translate::new(cube1, Vec3::new(265, 0, 295));
     objects.push(cube1);
 
     let cube2 = Cube::new(Point3::zero(), Point3::new(165, 165, 165), white);
-    let cube2 = RotateY::new(Box::new(cube2), -18.0);
+    let cube2 = RotateY::new(cube2, -18.0);
     let cube2 = Translate::new(cube2, Vec3::new(130, 0, 65));
     objects.push(cube2);
     
@@ -229,12 +229,12 @@ fn cornell_smoke() -> Box<dyn Hit> {
     objects.push(XyRect::new((0.0, 555.0), (0.0, 555.0), 555.0, white.clone()));
 
     let cube1 = Cube::new(Point3::zero(), Point3::new(165, 330, 165), white.clone());
-    let cube1 = RotateY::new(Box::new(cube1), 15.0);
+    let cube1 = RotateY::new(cube1, 15.0);
     let cube1 = Translate::new(cube1, Vec3::new(265, 0, 295));
     objects.push(ConstantMedium::new_from_color(Box::new(cube1), 0.01, Color::new(0,0,0)));
 
     let cube2 = Cube::new(Point3::zero(), Point3::new(165, 165, 165), white);
-    let cube2 = RotateY::new(Box::new(cube2), -18.0);
+    let cube2 = RotateY::new(cube2, -18.0);
     let cube2 = Translate::new(cube2, Vec3::new(130, 0, 65));
     objects.push(ConstantMedium::new_from_color(Box::new(cube2), 0.01, Color::new(1,1,1)));
     
@@ -302,9 +302,7 @@ fn final_scene_book2() -> Box<dyn Hit> {
 
     objects.push(Translate::new(
         RotateY::new(
-            Box::new(
-                BVH::new(boxes2.list, 0.0, 1.0)
-            ), 
+            BVH::new(boxes2.list, 0.0, 1.0),
             15.0
         ),
         Vec3::new(-100, 270, 395)
