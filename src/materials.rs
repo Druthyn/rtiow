@@ -26,13 +26,13 @@ impl Lambertian {
 
 impl Material for Lambertian {            
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
-        let mut scatter_direction = rec.get_normal() + Vec3::random_unit_vector();
+        let mut scatter_direction = rec.normal() + Vec3::random_unit_vector();
 
         if scatter_direction.is_near_zero() {
-            scatter_direction = rec.get_normal();
+            scatter_direction = rec.normal();
         }
-        let scattered = Ray::new(rec.get_p(), scatter_direction, r_in.time());
-        let attenuation = self.albedo.value(rec.u(), rec.v(), rec.p());
+        let scattered = Ray::new(rec.p(), scatter_direction, r_in.time());
+        let attenuation = self.albedo.value(rec.u(), rec.v(), &rec.p());
         Some((attenuation, scattered))
     }
 }
@@ -54,11 +54,11 @@ impl Metal {
 impl Material for Metal {
             
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
-        let reflected = r_in.direction().reflect(&rec.get_normal()).unit_vector();
+        let reflected = r_in.direction().reflect(&rec.normal()).unit_vector();
 
-        let scattered = Ray::new(rec.get_p(), reflected + self.fuzz*Vec3::random_in_unit_sphere(), r_in.time());
+        let scattered = Ray::new(rec.p(), reflected + self.fuzz*Vec3::random_in_unit_sphere(), r_in.time());
         
-        if scattered.direction().dot(&rec.get_normal()) <= 0.0 {
+        if scattered.direction().dot(&rec.normal()) <= 0.0 {
             return None
         }
 
@@ -93,19 +93,19 @@ impl Material for Dialectric {
         };
 
         let unit_direction = r_in.direction() .unit_vector();
-        let cos_theta = 1.0_f64.min(-unit_direction.dot(&rec.get_normal()));
+        let cos_theta = 1.0_f64.min(-unit_direction.dot(&rec.normal()));
         let sin_theta = (1.0 - cos_theta*cos_theta).sqrt();
 
         let can_refract = refraction_ratio * sin_theta <= 1.0;
         
         let mut rng = thread_rng();
         let direction = if can_refract && reflectence(cos_theta, refraction_ratio) <= rng.gen(){
-            unit_direction.refract(rec.get_normal(), refraction_ratio)
+            unit_direction.refract(rec.normal(), refraction_ratio)
         } else {
-            unit_direction.reflect(&rec.get_normal())
+            unit_direction.reflect(&rec.normal())
         };
                             
-        let scattered = Ray::new(rec.get_p(), direction, r_in.time());
+        let scattered = Ray::new(rec.p(), direction, r_in.time());
         Some((Color::new(1,1,1), scattered))
     }
 }
