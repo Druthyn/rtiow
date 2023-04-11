@@ -30,17 +30,7 @@ use crate::materials::{Lambertian, Metal, Dialectric};
 use crate::vec3::{Point3, Vec3, Color};
 use crate::ray::Ray;
 use crate::hittables::{Hit, HittableList, sphere::Sphere};
-use crate::camera::Camera;
-
-
-
-const ASPECT_RATIO: f64 = 1.0;
-const IMAGE_WIDTH: u32 = 800;
-const IMAGE_HEIGHT: u32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as u32;
-const SAMPLES_PER_PIXEL: u64 = 10;
-const MAX_DEPTH: i32 = 50;
-const TIME0: f64 = 0.0;
-const TIME1: f64 = 1.0;
+use crate::camera::{Camera, CameraSettings};
 
 #[allow(dead_code)]
 enum DebugSaving {
@@ -50,6 +40,43 @@ enum DebugSaving {
 }
 
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
+
+struct ImageSettings {
+    width: u32,
+    height: u32,
+    samples_per_pixel: u64,
+    max_depth: i32,
+}
+
+impl ImageSettings {
+    fn new(width: u32, aspect_ratio: f64, samples_per_pixel: u64, max_depth: i32) -> Self {
+        let height: u32 = (width as f64 / aspect_ratio) as u32;
+        ImageSettings { width, height, samples_per_pixel, max_depth }
+    }
+}
+
+impl Default for ImageSettings {
+    fn default() -> Self {
+        Self { width: 800, height: 800, samples_per_pixel: 40, max_depth: 50 }
+    }
+}
+
+struct Scene {
+    background: Color,
+    world: Box<dyn Hit>,
+}
+
+impl Scene {
+    fn new(bg: Color, world: Box<dyn Hit>) -> Self {
+        Scene { background: bg, world }
+    }
+}
+
+struct Renderer {
+    cam: Camera,
+    scene: Scene,
+    image_settings: ImageSettings,
+}
 
 #[allow(clippy::borrowed_box)]
 fn ray_color(r: &Ray, background: &Color, world: &Box<dyn Hit>, depth: i32) -> Color { 
@@ -118,7 +145,7 @@ fn random_scene() -> Box<dyn Hit> {
     let material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.push(Sphere::new_static(Point3::new(4, 1, 0), 1.0, material3));
 
-    Box::new(BVH::new(world.list, TIME0, TIME1))
+    Box::new(BVH::new(world.list, 0.0, 1.0))
 }
 
 #[allow(dead_code)]
@@ -151,7 +178,7 @@ fn two_perlin_spheres() -> Box<dyn Hit> {
 
 #[allow(dead_code)]
 fn earth() -> Box<dyn Hit> {
-    let earth_texture = ImageTexture::new("earthmsdap.jpg".to_string());
+    let earth_texture = ImageTexture::new("earthmap.jpg".to_string());
         
     let earth_surface = Arc::new(Lambertian::new(earth_texture));
 
@@ -310,206 +337,177 @@ fn final_scene_book2() -> Box<dyn Hit> {
 
 
 fn main() {
-    let world: Box<dyn Hit>;
+    let scene: Scene;
     let cam: Camera;
-    let background: Color;
-
-    const SCENE: i32 = 4;
+    let image_settings: ImageSettings;
+    
+    const SCENE: i32 = 8;
     match SCENE {
         1 => {
-            world = random_scene();
-            background = Color::new(0.7, 0.8, 1.0);
-
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
+            let settings = CameraSettings::new(20, 16.0/9.0, 0.1, 10);
+            image_settings = ImageSettings::new(400, settings.aspect_ratio, 100, 50);
+            scene = Scene::new(Color::new(0.7, 0.8, 1.0), random_scene());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                20.0, 
-                ASPECT_RATIO,
-                0.1,
-                10.0,
-                TIME0,
-                TIME1,
-            );
+                settings,
+                0,
+                1,
+            )
         },
         2 => {
-            world = two_spheres();
-            background = Color::new(0.7, 0.8, 1.0);
-
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
+            let settings = CameraSettings::new(20, 16.0/9.0, 0, 10);
+            image_settings = ImageSettings::new(400, settings.aspect_ratio, 100, 50);
+            scene = Scene::new(Color::new(0.7, 0.8, 1.0), two_spheres());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                20.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
-            );
+                settings,
+                0,
+                1,
+            )
         },
         3 => {
-            world = two_perlin_spheres();
-            background = Color::new(0.7, 0.8, 1.0);
-
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
+            let settings = CameraSettings::new(20, 16.0/9.0, 0, 10);
+            image_settings = ImageSettings::new(400, settings.aspect_ratio, 100, 50);
+            scene = Scene::new(Color::new(0.7, 0.8, 1.0), two_perlin_spheres());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                20.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
-            );
+                settings,
+                0,
+                1,
+            )
         },
         4 => {
-            world = earth();
-            background = Color::new(0.7, 0.8, 1.0);
-
             let look_from = Point3::new(13, 2, 3);
             let look_at = Point3::new(0, 0, 0);
+            let settings = CameraSettings::new(20, 16.0/9.0, 0, 10);
+            image_settings = ImageSettings::new(400, settings.aspect_ratio, 100, 50);
+            scene = Scene::new(Color::new(0.7, 0.8, 1.0), earth());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                20.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
-            );
+                settings,
+                0,
+                1,
+            )
         },
         5 => {
-            world = simple_light();
-            background = Color::new(0, 0, 0);
-            let look_from = Point3::new(26,3,6);
-            let look_at = Point3::new(0,2,0);
+            let look_from = Point3::new(26, 3, 6);
+            let look_at = Point3::new(0, 2, 0);
+            let settings = CameraSettings::new(20, 16.0/9.0, 0, 10);
+            image_settings = ImageSettings::new(400, settings.aspect_ratio, 400, 50);
+            scene = Scene::new(Color::new(0, 0, 0), simple_light());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                20.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
+                settings,
+                0,
+                1,
             )
-
         },
         6 => {
-            world = cornell_box();
-            background = Color::new(0, 0, 0);
             let look_from = Point3::new(278, 278, -800);
             let look_at = Point3::new(278, 278, 0);
+            let settings = CameraSettings::new(40, 1, 0, 10);
+            image_settings = ImageSettings::new(600, settings.aspect_ratio, 200, 50);
+            scene = Scene::new(Color::new(0, 0, 0), cornell_box());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                40.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
+                settings,
+                0,
+                1,
             )
         },
         7 => {
-            world = cornell_smoke();
-            background = Color::new(0, 0, 0);
             let look_from = Point3::new(278, 278, -800);
             let look_at = Point3::new(278, 278, 0);
+            let settings = CameraSettings::new(40, 1, 0, 10);
+            image_settings = ImageSettings::new(600, settings.aspect_ratio, 200, 50);
+            scene = Scene::new(Color::new(0, 0, 0), cornell_smoke());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                40.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
+                settings,
+                0,
+                1,
             )
         },
         8 => {
-            world = final_scene_book2();
-            background = Color::new(0, 0, 0);
             let look_from = Point3::new(478, 278, -600);
             let look_at = Point3::new(278, 278, 0);
+            let settings = CameraSettings::new(40, 1, 0, 10);
+            image_settings = ImageSettings::new(800, settings.aspect_ratio, 10000, 50);
+            scene = Scene::new(Color::new(0, 0, 0), final_scene_book2());
             cam = Camera::new(
                 look_from,
                 look_at,
                 Vec3::new(0, 1, 0),
-                40.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
+                settings,
+                0,
+                1,
             )
         },
         _ => {
-            background = Color::new(0.7, 0.8, 1.0);
-            world = Box::<HittableList>::default();
-            let look_from = Point3::new(0, 0, 0);
-            let look_at = Point3::new(0, 1, 0);
-            cam = Camera::new(
-                look_from,
-                look_at,
-                Vec3::new(0, 1, 0),
-                20.0, 
-                ASPECT_RATIO,
-                0.0,
-                10.0,
-                TIME0,
-                TIME1,
-            );
+            let world = Box::<HittableList>::default();
+            scene = Scene::new(Color::new(0.7, 0.8, 1.0), world);
+            image_settings = ImageSettings::default();                        
+            cam = Camera::default();
         }
         ,
     }
+
+    let renderer = Renderer { cam, scene, image_settings };
+
     let style = ProgressStyle::with_template("[Elapsed: {elapsed_precise}] Eta: {eta_precise} {bar:40.cyan/blue} {pos:>7}/{len:7}").unwrap();
 //    Rendering
-    let pixels: Vec<u8> = (0..IMAGE_HEIGHT)
+    let pixels: Vec<u8> = (0..renderer.image_settings.height)
                 .into_par_iter()
                 .progress_with_style(style)
-                .flat_map_iter(|j| (0..IMAGE_WIDTH).map(move |i| (i, j)))
+                .flat_map_iter(|j| (0..renderer.image_settings.width).map(move |i| (i, j)))
                 .flat_map_iter(|(i, j)| {
                     let mut pixel_color: Color = Color::zero();
                     let mut rng = thread_rng();
 
-                    for _ in 0..SAMPLES_PER_PIXEL {
-                        let u = (i as f64 + rng.gen::<f64>()) / ((IMAGE_WIDTH-1)  as f64);
-                        let v = (j as f64 + rng.gen::<f64>()) / ((IMAGE_HEIGHT-1) as f64);
+                    for _ in 0..renderer.image_settings.samples_per_pixel {
+                        let u = (i as f64 + rng.gen::<f64>()) / ((renderer.image_settings.width-1)  as f64);
+                        let v = (j as f64 + rng.gen::<f64>()) / ((renderer.image_settings.height-1) as f64);
 
-                        let r = cam.get_ray(u, v);
-                        pixel_color = pixel_color + ray_color(&r, &background, &world, MAX_DEPTH);
+                        let r = renderer.cam.get_ray(u, v);
+                        pixel_color = pixel_color + ray_color(&r, &renderer.scene.background, &renderer.scene.world, renderer.image_settings.max_depth);
                     }
-                    pixel_color.to_rgba(255, SAMPLES_PER_PIXEL)
+                    pixel_color.to_rgba(255, renderer.image_settings.samples_per_pixel)
                 })
                 .collect();
     
-    let pixels = pixels.chunks(4 * IMAGE_WIDTH as usize) // times 4 due to R G B and A channels for each pixel
+    let pixels = pixels.chunks(4 * renderer.image_settings.width as usize) // times 4 due to R G B and A channels for each pixel
                        .rev()                   
                        .flatten()
                        .copied()
                        .collect();
     
-    let image_buffer = ImageBuffer::from_vec(IMAGE_WIDTH, IMAGE_HEIGHT, pixels).unwrap();
+    let image_buffer = ImageBuffer::from_vec(renderer.image_settings.width, renderer.image_settings.height, pixels).unwrap();
     
     println!("\nDone.");
 
     // Drawing preview window
     
-    let mut window: piston_window::PistonWindow = piston_window::WindowSettings::new("Scene", [IMAGE_WIDTH, IMAGE_HEIGHT])
+    let mut window: piston_window::PistonWindow = piston_window::WindowSettings::new("Scene", [renderer.image_settings.width, renderer.image_settings.height])
         .exit_on_esc(true)
         .build()
         .unwrap_or_else(|_e| { panic!("Could not create window!")});
