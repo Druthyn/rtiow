@@ -4,6 +4,7 @@ pub mod hittables;
 pub mod camera;
 pub mod materials;
 pub mod texture;
+pub mod renderer;
 
 use std::sync::Arc;
 
@@ -12,9 +13,7 @@ use hittables::constant_medium::ConstantMedium;
 use hittables::cube::Cube;
 use hittables::transformations::{Translate, RotateY};
 use materials::DiffuseLight;
-use rayon::prelude::*;
-use indicatif::{ParallelProgressIterator, ProgressStyle};
-use image::ImageBuffer;
+
 use piston_window::EventLoop;
 use rand::{thread_rng, Rng};
 use hittables::rectangles::{XyRect, YzRect, XzRect};
@@ -27,8 +26,9 @@ use texture::image_texture::ImageTexture;
 
 
 use crate::materials::{Lambertian, Metal, Dialectric};
+use crate::renderer::{Scene, ImageSettings, Renderer};
 use crate::vec3::{Point3, Vec3, Color};
-use crate::ray::Ray;
+
 use crate::hittables::{Hit, HittableList, sphere::Sphere};
 use crate::camera::{Camera, CameraSettings};
 
@@ -41,63 +41,6 @@ enum DebugSaving {
 
 const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
-struct ImageSettings {
-    width: u32,
-    height: u32,
-    samples_per_pixel: u64,
-    max_depth: i32,
-}
-
-impl ImageSettings {
-    fn new(width: u32, aspect_ratio: f64, samples_per_pixel: u64, max_depth: i32) -> Self {
-        let height: u32 = (width as f64 / aspect_ratio) as u32;
-        ImageSettings { width, height, samples_per_pixel, max_depth }
-    }
-}
-
-impl Default for ImageSettings {
-    fn default() -> Self {
-        Self { width: 800, height: 800, samples_per_pixel: 40, max_depth: 50 }
-    }
-}
-
-struct Scene {
-    background: Color,
-    world: Box<dyn Hit>,
-}
-
-impl Scene {
-    fn new(bg: Color, world: Box<dyn Hit>) -> Self {
-        Scene { background: bg, world }
-    }
-}
-
-struct Renderer {
-    cam: Camera,
-    scene: Scene,
-    image_settings: ImageSettings,
-}
-
-#[allow(clippy::borrowed_box)]
-fn ray_color(r: &Ray, background: &Color, world: &Box<dyn Hit>, depth: i32) -> Color { 
-
-    if depth <= 0 {
-        return Color::zero()
-    }
-
-    let res = world.hit(r, 0.0001, f64::INFINITY);
-
-    if let Some(shape) = res {
-        let scatter = shape.get_mat().scatter(r, &shape);
-        let emitted = shape.get_mat().emitted(shape.u(), shape.v(), &shape.p());
-        if let Some((att, scat)) = scatter {
-            return emitted + att * ray_color(&scat, background, world, depth-1)
-        }
-        emitted
-    } else {
-        *background
-    }
-}
 
 #[allow(dead_code)]
 fn random_scene() -> Box<dyn Hit> {
@@ -473,35 +416,7 @@ fn main() {
     }
 
     let renderer = Renderer { cam, scene, image_settings };
-
-    let style = ProgressStyle::with_template("[Elapsed: {elapsed_precise}] Eta: {eta_precise} {bar:40.cyan/blue} {pos:>7}/{len:7}").unwrap();
-//    Rendering
-    let pixels: Vec<u8> = (0..renderer.image_settings.height)
-                .into_par_iter()
-                .progress_with_style(style)
-                .flat_map_iter(|j| (0..renderer.image_settings.width).map(move |i| (i, j)))
-                .flat_map_iter(|(i, j)| {
-                    let mut pixel_color: Color = Color::zero();
-                    let mut rng = thread_rng();
-
-                    for _ in 0..renderer.image_settings.samples_per_pixel {
-                        let u = (i as f64 + rng.gen::<f64>()) / ((renderer.image_settings.width-1)  as f64);
-                        let v = (j as f64 + rng.gen::<f64>()) / ((renderer.image_settings.height-1) as f64);
-
-                        let r = renderer.cam.get_ray(u, v);
-                        pixel_color = pixel_color + ray_color(&r, &renderer.scene.background, &renderer.scene.world, renderer.image_settings.max_depth);
-                    }
-                    pixel_color.to_rgba(255, renderer.image_settings.samples_per_pixel)
-                })
-                .collect();
-    
-    let pixels = pixels.chunks(4 * renderer.image_settings.width as usize) // times 4 due to R G B and A channels for each pixel
-                       .rev()                   
-                       .flatten()
-                       .copied()
-                       .collect();
-    
-    let image_buffer = ImageBuffer::from_vec(renderer.image_settings.width, renderer.image_settings.height, pixels).unwrap();
+    let image_buffer = renderer.render();
     
     println!("\nDone.");
 
