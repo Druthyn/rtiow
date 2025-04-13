@@ -15,8 +15,8 @@ use hittables::transformations::{RotateY, Translate};
 use materials::DiffuseLight;
 
 use hittables::rectangles::{XyRect, XzRect, YzRect};
-use piston_window::EventLoop;
 use rand::{rng, Rng};
+use show_image::create_window;
 use texture::checker_texture::CheckerTexture;
 use texture::image_texture::ImageTexture;
 use texture::noise_texture::NoiseTexture;
@@ -28,15 +28,6 @@ use crate::vec3::{Color, Point3, Vec3};
 
 use crate::camera::{Camera, CameraSettings};
 use crate::hittables::{sphere::Sphere, Hit, HittableList};
-
-#[allow(dead_code)]
-enum DebugSaving {
-    Choose,
-    Save,
-    Quit,
-}
-
-const SAVE_IMAGE: DebugSaving = DebugSaving::Save;
 
 #[allow(dead_code)]
 fn random_scene() -> Box<dyn Hit> {
@@ -369,6 +360,8 @@ fn final_scene_book2() -> Box<dyn Hit> {
     Box::new(objects)
 }
 
+
+#[show_image::main]
 fn main() {
     let scene: Scene;
     let cam: Camera;
@@ -459,60 +452,9 @@ fn main() {
 
     // Drawing preview window
 
-    let mut window: piston_window::PistonWindow = piston_window::WindowSettings::new(
-        "Scene",
-        [
-            renderer.image_settings.width,
-            renderer.image_settings.height,
-        ],
-    )
-    .exit_on_esc(true)
-    .build()
-    .unwrap_or_else(|_e| panic!("Could not create window!"));
+    // Create a window with default options and display the image.
+    let window = create_window("Rendered Scene", Default::default()).unwrap();
+    window.set_image("image", image_buffer).unwrap();
+    window.wait_until_destroyed().unwrap();
 
-    let texture = piston_window::Texture::from_image(
-        &mut window.create_texture_context(),
-        &image_buffer,
-        &piston_window::TextureSettings::new(),
-    )
-    .unwrap();
-
-    window.set_lazy(true);
-
-    while let Some(e) = window.next() {
-        window.draw_2d(&e, |c, g, _| {
-            piston_window::clear([1.0; 4], g);
-            piston_window::image(&texture, c.transform, g)
-        });
-    }
-
-    // Save or discard image
-
-    match SAVE_IMAGE {
-        DebugSaving::Save => image_buffer.save("image.png").unwrap(),
-        DebugSaving::Quit => (),
-        DebugSaving::Choose => {
-            let mut input = String::new();
-
-            let mut valid = false;
-
-            while !valid {
-                println!("Save image (s) or quit (q)?");
-                std::io::stdin()
-                    .read_line(&mut input)
-                    .expect("Failed to read line");
-                let san_input = input.trim();
-
-                if ["s", "S"].contains(&san_input) {
-                    image_buffer.save("image.png").unwrap();
-                    println!("image.png saved to working directory");
-                    valid = true;
-                } else if ["q", "Q"].contains(&san_input) {
-                    valid = true;
-                } else {
-                    println!("Invalid input.");
-                }
-            }
-        }
-    }
 }
