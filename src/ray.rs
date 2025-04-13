@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::vec3::{Vec3, Point3};
+use crate::vec3::{Point3, Vec3};
 
 pub struct Ray {
     orig: Point3,
@@ -10,10 +10,10 @@ pub struct Ray {
 
 impl Ray {
     pub fn new(orig: Point3, dir: Vec3, time: f64) -> Ray {
-        Ray {orig, dir, time}
+        Ray { orig, dir, time }
     }
 
-    pub fn at(&self, t: f64 ) -> Point3 {
+    pub fn at(&self, t: f64) -> Point3 {
         self.orig + (t * self.dir)
     }
 
@@ -24,11 +24,10 @@ impl Ray {
     pub fn origin(&self) -> Point3 {
         self.orig
     }
-    
+
     pub fn time(&self) -> f64 {
         self.time
     }
-
 }
 
 impl Display for Ray {

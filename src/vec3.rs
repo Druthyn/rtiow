@@ -1,5 +1,8 @@
-use std::{ops::{Add, Sub, Mul, Div, Index, IndexMut}, fmt::Display};
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
+use std::{
+    fmt::Display,
+    ops::{Add, Div, Index, IndexMut, Mul, Sub},
+};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
@@ -9,37 +12,48 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-
     pub fn zero() -> Vec3 {
-        Vec3 { x: (0.0), y: (0.0), z: (0.0) }
+        Vec3 {
+            x: (0.0),
+            y: (0.0),
+            z: (0.0),
+        }
     }
 
     pub fn new<T1: Into<f64>, T2: Into<f64>, T3: Into<f64>>(x: T1, y: T2, z: T3) -> Vec3 {
-        Vec3 {x: x.into(), y: y.into(), z: z.into()}
+        Vec3 {
+            x: x.into(),
+            y: y.into(),
+            z: z.into(),
+        }
     }
 
     pub fn random() -> Vec3 {
-        let mut rng = thread_rng();
-        Vec3 {x: rng.gen(), y: rng.gen(), z: rng.gen()}
+        let mut rng = rng();
+        Vec3 {
+            x: rng.random(),
+            y: rng.random(),
+            z: rng.random(),
+        }
     }
 
     pub fn random_in_range<T1: Into<f64>, T2: Into<f64>>(min: T1, max: T2) -> Vec3 {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let min = min.into();
         let max = max.into();
         Vec3 {
-            x: rng.gen_range(min..=max), 
-            y: rng.gen_range(min..=max), 
-            z: rng.gen_range(min..=max)
+            x: rng.random_range(min..=max),
+            y: rng.random_range(min..=max),
+            z: rng.random_range(min..=max),
         }
     }
 
     pub fn random_in_unit_sphere() -> Vec3 {
         let mut p;
         loop {
-            p = Vec3::random_in_range(-1,1);
+            p = Vec3::random_in_range(-1, 1);
             if p.length_squared() < 1.0 {
-                return p
+                return p;
             }
         }
     }
@@ -50,23 +64,23 @@ impl Vec3 {
 
     pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
         let in_unit_sphere = Vec3::random_in_unit_sphere();
-        if in_unit_sphere.dot(normal) > 0.0 {// In the same hemisphere as the normal
+        if in_unit_sphere.dot(normal) > 0.0 {
+            // In the same hemisphere as the normal
             return in_unit_sphere;
-        } 
+        }
         Vec3::zero() - in_unit_sphere
     }
 
     pub fn random_in_unit_disk() -> Vec3 {
         let mut p;
-        let mut rng = thread_rng();
+        let mut rng = rng();
         loop {
-            p = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0);
+            p = Vec3::new(rng.random_range(-1.0..1.0), rng.random_range(-1.0..1.0), 0);
             if p.length_squared() < 1.0 {
-                return p
+                return p;
             }
         }
     }
-
 
     pub fn x(&self) -> f64 {
         self.x
@@ -97,10 +111,10 @@ impl Vec3 {
     }
 
     pub fn cross(&self, rhs: &Vec3) -> Vec3 {
-        Vec3 { 
+        Vec3 {
             x: (self.y * rhs.z - self.z * rhs.y),
             y: (self.z * rhs.x - self.x * rhs.z),
-            z: (self.x * rhs.y - self.y * rhs.x) 
+            z: (self.x * rhs.y - self.y * rhs.x),
         }
     }
 
@@ -114,7 +128,7 @@ impl Vec3 {
     }
 
     pub fn reflect(&self, n: &Vec3) -> Vec3 {
-        self - 2.0*self.dot(n) * *n
+        self - 2.0 * self.dot(n) * *n
     }
 
     pub fn refract(&self, n: Vec3, etai_over_etat: f64) -> Vec3 {
@@ -163,34 +177,33 @@ impl Add<Vec3> for Vec3 {
 
     fn add(self, rhs: Self) -> Self::Output {
         Self {
-            x: self.x + rhs.x, 
+            x: self.x + rhs.x,
             y: self.y + rhs.y,
-            z: self.z + rhs.z
+            z: self.z + rhs.z,
         }
     }
 }
 
-impl<'a, 'b> Add<&'a Vec3> for &'b Vec3 {
+impl Add<&Vec3> for &Vec3 {
     type Output = Vec3;
     fn add(self, rhs: &Vec3) -> Self::Output {
         *self + *rhs
     }
 }
 
-impl<'a> Add<Vec3> for &'a Vec3 {
+impl Add<Vec3> for &Vec3 {
     type Output = Vec3;
     fn add(self, rhs: Vec3) -> Self::Output {
         *self + rhs
     }
 }
 
-impl<'a> Add<&'a Vec3> for Vec3 {
+impl Add<&Vec3> for Vec3 {
     type Output = Vec3;
     fn add(self, rhs: &Vec3) -> Self::Output {
         self + *rhs
     }
 }
-
 
 // Addition of vec3 with f64, and potential ref combinations
 
@@ -199,9 +212,9 @@ impl Add<f64> for Vec3 {
 
     fn add(self, rhs: f64) -> Self::Output {
         Self {
-            x: self.x + rhs, 
+            x: self.x + rhs,
             y: self.y + rhs,
-            z: self.z + rhs 
+            z: self.z + rhs,
         }
     }
 }
@@ -269,28 +282,28 @@ impl Sub for Vec3 {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self {
-            x: self.x - rhs.x, 
+            x: self.x - rhs.x,
             y: self.y - rhs.y,
-            z: self.z - rhs.z
+            z: self.z - rhs.z,
         }
     }
 }
 
-impl<'a, 'b> Sub<&'a Vec3> for &'b Vec3 {
+impl Sub<&Vec3> for &Vec3 {
     type Output = Vec3;
     fn sub(self, rhs: &Vec3) -> Self::Output {
         *self - *rhs
     }
 }
 
-impl<'a> Sub<Vec3> for &'a Vec3 {
+impl Sub<Vec3> for &Vec3 {
     type Output = Vec3;
     fn sub(self, rhs: Vec3) -> Self::Output {
         *self - rhs
     }
 }
 
-impl<'a> Sub<&'a Vec3> for Vec3 {
+impl Sub<&Vec3> for Vec3 {
     type Output = Vec3;
     fn sub(self, rhs: &Vec3) -> Self::Output {
         self - *rhs
@@ -304,9 +317,9 @@ impl Sub<f64> for Vec3 {
 
     fn sub(self, rhs: f64) -> Self::Output {
         Self {
-            x: self.x - rhs, 
+            x: self.x - rhs,
             y: self.y - rhs,
-            z: self.z - rhs 
+            z: self.z - rhs,
         }
     }
 }
@@ -342,9 +355,9 @@ impl Sub<Vec3> for f64 {
 
     fn sub(self, rhs: Vec3) -> Self::Output {
         Vec3 {
-            x: self - rhs.x, 
+            x: self - rhs.x,
             y: self - rhs.y,
-            z: self - rhs.z 
+            z: self - rhs.z,
         }
     }
 }
@@ -361,7 +374,6 @@ impl Mul<f64> for Vec3 {
             z: self.z * scalar,
         }
     }
-
 }
 
 impl Mul<f64> for &Vec3 {
@@ -370,9 +382,7 @@ impl Mul<f64> for &Vec3 {
     fn mul(self, scalar: f64) -> Self::Output {
         *self * scalar
     }
-
 }
-
 
 // Multiplication of vec3 with f64, and potential ref combinations TODO
 
@@ -385,8 +395,6 @@ impl Mul<Vec3> for f64 {
             z: rhs.z * self,
         }
     }
-
-    
 }
 
 impl Mul<Vec3> for Vec3 {
@@ -405,7 +413,7 @@ impl Mul<Vec3> for Vec3 {
 impl Div<f64> for Vec3 {
     type Output = Vec3;
     fn div(self, scalar: f64) -> Self::Output {
-        self * (1.0/scalar)
+        self * (1.0 / scalar)
     }
 }
 
@@ -430,19 +438,17 @@ impl Div<f64> for &Vec3 {
     }
 }
 
-
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 
 impl Color {
-    pub fn to_rgba(&self, alpha: u8, samples_per_pixel: u64) -> [u8;4] {
-        
+    pub fn to_rgba(&self, alpha: u8, samples_per_pixel: u64) -> [u8; 4] {
         let mut r = self.x;
         let mut g = self.y;
         let mut b = self.z;
 
         let scale = 1.0 / (samples_per_pixel as f64);
-        r   = (scale * r).sqrt();
+        r = (scale * r).sqrt();
         g = (scale * g).sqrt();
         b = (scale * b).sqrt();
 

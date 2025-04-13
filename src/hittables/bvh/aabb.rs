@@ -1,4 +1,4 @@
-use crate::{vec3::Point3, ray::Ray};
+use crate::{ray::Ray, vec3::Point3};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Aabb {
@@ -7,8 +7,7 @@ pub struct Aabb {
 }
 
 impl Aabb {
-    
-    pub fn new(a: Point3, b: Point3) -> Aabb{
+    pub fn new(a: Point3, b: Point3) -> Aabb {
         Aabb {
             minimum: a,
             maximum: b,
@@ -27,7 +26,7 @@ impl Aabb {
         for a in 0..3 {
             let mut t_min = t_min;
             let mut t_max = t_max;
-            let inv_d = 1.0/r.direction()[a];
+            let inv_d = 1.0 / r.direction()[a];
             let mut t0 = (self.min()[a] - r.origin()[a]) * inv_d;
             let mut t1 = (self.max()[a] - r.origin()[a]) * inv_d;
             if inv_d < 0.0 {
@@ -38,9 +37,9 @@ impl Aabb {
             }
             if t1 < t_max {
                 t_max = t1;
-            } 
+            }
             if t_max <= t_min {
-                return None
+                return None;
             }
         }
         Some(true)
@@ -58,7 +57,6 @@ impl Aabb {
             box0.max().y().max(box1.max().y()),
             box0.max().z().max(box1.max().z()),
         );
-        Aabb {minimum, maximum}
+        Aabb { minimum, maximum }
     }
-
 }

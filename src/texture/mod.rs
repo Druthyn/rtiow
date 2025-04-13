@@ -3,9 +3,9 @@ pub mod image_texture;
 pub mod noise_texture;
 mod perlin;
 
-use crate::vec3::{Point3, Color};
+use crate::vec3::{Color, Point3};
 
-pub trait Texture: Send + Sync + Clone{
+pub trait Texture: Send + Sync + Clone {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 
@@ -19,10 +19,11 @@ impl SolidColor {
         SolidColor { color_value: c }
     }
 
-    pub fn new_from_rgb(red: f64, green: f64, blue: f64) -> SolidColor{
-        SolidColor { color_value: Color::new(red, green, blue)}
+    pub fn new_from_rgb(red: f64, green: f64, blue: f64) -> SolidColor {
+        SolidColor {
+            color_value: Color::new(red, green, blue),
+        }
     }
-
 }
 
 impl Texture for SolidColor {

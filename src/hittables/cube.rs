@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
-use crate::{vec3::Point3, materials::Material, hittables::bvh::aabb::Aabb, ray::Ray};
+use crate::{hittables::bvh::aabb::Aabb, materials::Material, ray::Ray, vec3::Point3};
 
-use super::{HittableList, Hit, rectangles::{XyRect, XzRect, YzRect}, HitRecord};
+use super::{
+    rectangles::{XyRect, XzRect, YzRect},
+    Hit, HitRecord, HittableList,
+};
 
 pub struct Cube {
     cube_min: Point3,
@@ -17,16 +20,45 @@ impl Cube {
 
         let mut sides = HittableList::default();
 
-        sides.push(XyRect::new((p0.x(), p1.x()), (p0.y(), p1.y()), p1.z(), mat.clone()));
-        sides.push(XyRect::new((p0.x(), p1.x()), (p0.y(), p1.y()), p0.z(), mat.clone()));
+        sides.push(XyRect::new(
+            (p0.x(), p1.x()),
+            (p0.y(), p1.y()),
+            p1.z(),
+            mat.clone(),
+        ));
+        sides.push(XyRect::new(
+            (p0.x(), p1.x()),
+            (p0.y(), p1.y()),
+            p0.z(),
+            mat.clone(),
+        ));
 
-        sides.push(XzRect::new((p0.x(), p1.x()), (p0.z(), p1.z()), p1.y(), mat.clone()));
-        sides.push(XzRect::new((p0.x(), p1.x()), (p0.z(), p1.z()), p0.y(), mat.clone()));
+        sides.push(XzRect::new(
+            (p0.x(), p1.x()),
+            (p0.z(), p1.z()),
+            p1.y(),
+            mat.clone(),
+        ));
+        sides.push(XzRect::new(
+            (p0.x(), p1.x()),
+            (p0.z(), p1.z()),
+            p0.y(),
+            mat.clone(),
+        ));
 
-        sides.push(YzRect::new((p0.y(), p1.y()), (p0.z(), p1.z()), p1.x(), mat.clone()));
+        sides.push(YzRect::new(
+            (p0.y(), p1.y()),
+            (p0.z(), p1.z()),
+            p1.x(),
+            mat.clone(),
+        ));
         sides.push(YzRect::new((p0.y(), p1.y()), (p0.z(), p1.z()), p0.x(), mat));
 
-        Cube {cube_min, cube_max, sides}
+        Cube {
+            cube_min,
+            cube_max,
+            sides,
+        }
     }
 }
 

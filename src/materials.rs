@@ -1,14 +1,19 @@
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 
-use crate::{ray::Ray, vec3::{Color, Vec3, Point3}, hittables::HitRecord, texture::SolidColor};
 use crate::texture::Texture;
+use crate::{
+    hittables::HitRecord,
+    ray::Ray,
+    texture::SolidColor,
+    vec3::{Color, Point3, Vec3},
+};
 
-pub trait Material :Send + Sync{
+pub trait Material: Send + Sync {
     fn scatter(&self, _r_in: &Ray, _rec: &HitRecord) -> Option<(Color, Ray)> {
         None
     }
     fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
-        Color::new(0,0,0)
+        Color::new(0, 0, 0)
     }
 }
 
@@ -18,13 +23,11 @@ pub struct Lambertian<T: Texture> {
 
 impl<T: Texture> Lambertian<T> {
     pub fn new(a: T) -> Self {
-        Lambertian {
-            albedo: a,
-        }
+        Lambertian { albedo: a }
     }
 }
 
-impl<T: Texture> Material for Lambertian<T> {            
+impl<T: Texture> Material for Lambertian<T> {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = rec.normal() + Vec3::random_unit_vector();
 
@@ -44,22 +47,22 @@ pub struct Metal {
 
 impl Metal {
     pub fn new(a: Color, fuzz: f64) -> Self {
-        Metal {
-            albedo: a,
-            fuzz,
-        }
+        Metal { albedo: a, fuzz }
     }
 }
 
 impl Material for Metal {
-            
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflected = r_in.direction().reflect(&rec.normal()).unit_vector();
 
-        let scattered = Ray::new(rec.p(), reflected + self.fuzz*Vec3::random_in_unit_sphere(), r_in.time());
-        
+        let scattered = Ray::new(
+            rec.p(),
+            reflected + self.fuzz * Vec3::random_in_unit_sphere(),
+            r_in.time(),
+        );
+
         if scattered.direction().dot(&rec.normal()) <= 0.0 {
-            return None
+            return None;
         }
 
         let attenuation = self.albedo;
@@ -68,13 +71,13 @@ impl Material for Metal {
 }
 
 pub struct Dialectric {
-    ir: f64
+    ir: f64,
 }
 
 impl Dialectric {
-    pub fn new(index_of_refraction: f64) -> Self{
+    pub fn new(index_of_refraction: f64) -> Self {
         Dialectric {
-            ir: index_of_refraction
+            ir: index_of_refraction,
         }
     }
 }
@@ -82,31 +85,30 @@ impl Dialectric {
 impl Material for Dialectric {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         fn reflectence(cosine: f64, ref_idx: f64) -> f64 {
-            let r0 = ((1.0-ref_idx) / (1.0+ref_idx)).powi(2);
-            r0 + (1.0-r0)*(1.0-cosine).powi(5)
-    
+            let r0 = ((1.0 - ref_idx) / (1.0 + ref_idx)).powi(2);
+            r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
         }
 
         let refraction_ratio = match rec.front_face {
-            true => 1.0/self.ir,
+            true => 1.0 / self.ir,
             false => self.ir,
         };
 
-        let unit_direction = r_in.direction() .unit_vector();
+        let unit_direction = r_in.direction().unit_vector();
         let cos_theta = 1.0_f64.min(-unit_direction.dot(&rec.normal()));
-        let sin_theta = (1.0 - cos_theta*cos_theta).sqrt();
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
         let can_refract = refraction_ratio * sin_theta <= 1.0;
-        
-        let mut rng = thread_rng();
-        let direction = if can_refract && reflectence(cos_theta, refraction_ratio) <= rng.gen(){
+
+        let mut rng = rng();
+        let direction = if can_refract && reflectence(cos_theta, refraction_ratio) <= rng.random() {
             unit_direction.refract(rec.normal(), refraction_ratio)
         } else {
             unit_direction.reflect(&rec.normal())
         };
-                            
+
         let scattered = Ray::new(rec.p(), direction, r_in.time());
-        Some((Color::new(1,1,1), scattered))
+        Some((Color::new(1, 1, 1), scattered))
     }
 }
 
@@ -141,7 +143,7 @@ pub struct Isotropic<T: Texture> {
 
 impl<T: Texture> Isotropic<T> {
     pub fn new_from_texture(a: T) -> Isotropic<T> {
-        Isotropic {albedo: a}
+        Isotropic { albedo: a }
     }
 
     pub fn new_from_color(c: Color) -> Isotropic<SolidColor> {
